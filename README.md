@@ -260,16 +260,30 @@ async function askAboutQuran(question: string) {
 
 ## Data Source
 
-This library uses the [AlQuran.cloud API](https://alquran.cloud/api) Uthmani text, based on the authoritative Medina Mushaf (1924 Cairo edition, Al-Azhar endorsed).
+This library uses high-quality Quranic data from **[QUL (Quranic Universal Library)](https://qul.tarteel.ai/)** by **[Tarteel AI](https://tarteel.ai/)**:
 
-- **Total Verses**: 6,236
-- **Total Surahs**: 114
-- **Script**: Uthmani
-- **Encoding**: UTF-8
+- **Uthmani Script**: Authoritative Arabic text with full diacritics (for corrections)
+- **Imlaei Simple**: Simplified phonetic Arabic (for matching/search)
+
+| | |
+|---|---|
+| **Total Verses** | 6,236 |
+| **Total Surahs** | 114 |
+| **Uthmani Source** | QUL - Uthmani (Ayah by Ayah) |
+| **Simple Source** | QUL - Imlaei Simple (Word by Word, aggregated) |
+| **Encoding** | UTF-8 |
+
+### Credits
+
+- **[Tarteel AI](https://tarteel.ai/)** - For creating and maintaining QUL
+- **[QUL (Quranic Universal Library)](https://qul.tarteel.ai/)** - Open-source Quranic resources platform
+- Data sourced from the authoritative Medina Mushaf
 
 ## License
 
 MIT © Yazin Alirhayim
+
+Quran data is provided by [QUL/Tarteel](https://qul.tarteel.ai/) - please review their licensing terms for commercial use.
 
 ## Contributing
 

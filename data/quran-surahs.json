@@ -1,800 +1,800 @@
 [
   {
     "number": 1,
-    "name": "سُورَةُ ٱلْفَاتِحَةِ",
-    "englishName": "Al-Faatiha",
-    "versesCount": 7,
-    "revelationType": "Meccan"
+    "name": "الفاتحة",
+    "englishName": "Al-Fatiha",
+    "revelationType": "Meccan",
+    "versesCount": 7
   },
   {
     "number": 2,
-    "name": "سُورَةُ البَقَرَةِ",
+    "name": "البقرة",
     "englishName": "Al-Baqara",
-    "versesCount": 286,
-    "revelationType": "Medinan"
+    "revelationType": "Medinan",
+    "versesCount": 286
   },
   {
     "number": 3,
-    "name": "سُورَةُ آلِ عِمۡرَانَ",
-    "englishName": "Aal-i-Imraan",
-    "versesCount": 200,
-    "revelationType": "Medinan"
+    "name": "آل عمران",
+    "englishName": "Aal-i-Imran",
+    "revelationType": "Medinan",
+    "versesCount": 200
   },
   {
     "number": 4,
-    "name": "سُورَةُ النِّسَاءِ",
-    "englishName": "An-Nisaa",
-    "versesCount": 176,
-    "revelationType": "Medinan"
+    "name": "النساء",
+    "englishName": "An-Nisa",
+    "revelationType": "Medinan",
+    "versesCount": 176
   },
   {
     "number": 5,
-    "name": "سُورَةُ المَائـِدَةِ",
-    "englishName": "Al-Maaida",
-    "versesCount": 120,
-    "revelationType": "Medinan"
+    "name": "المائدة",
+    "englishName": "Al-Ma'ida",
+    "revelationType": "Medinan",
+    "versesCount": 120
   },
   {
     "number": 6,
-    "name": "سُورَةُ الأَنۡعَامِ",
-    "englishName": "Al-An'aam",
-    "versesCount": 165,
-    "revelationType": "Meccan"
+    "name": "الأنعام",
+    "englishName": "Al-An'am",
+    "revelationType": "Meccan",
+    "versesCount": 165
   },
   {
     "number": 7,
-    "name": "سُورَةُ الأَعۡرَافِ",
-    "englishName": "Al-A'raaf",
-    "versesCount": 206,
-    "revelationType": "Meccan"
+    "name": "الأعراف",
+    "englishName": "Al-A'raf",
+    "revelationType": "Meccan",
+    "versesCount": 206
   },
   {
     "number": 8,
-    "name": "سُورَةُ الأَنفَالِ",
-    "englishName": "Al-Anfaal",
-    "versesCount": 75,
-    "revelationType": "Medinan"
+    "name": "الأنفال",
+    "englishName": "Al-Anfal",
+    "revelationType": "Medinan",
+    "versesCount": 75
   },
   {
     "number": 9,
-    "name": "سُورَةُ التَّوۡبَةِ",
+    "name": "التوبة",
     "englishName": "At-Tawba",
-    "versesCount": 129,
-    "revelationType": "Medinan"
+    "revelationType": "Medinan",
+    "versesCount": 129
   },
   {
     "number": 10,
-    "name": "سُورَةُ يُونُسَ",
+    "name": "يونس",
     "englishName": "Yunus",
-    "versesCount": 109,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 109
   },
   {
     "number": 11,
-    "name": "سُورَةُ هُودٍ",
+    "name": "هود",
     "englishName": "Hud",
-    "versesCount": 123,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 123
   },
   {
     "number": 12,
-    "name": "سُورَةُ يُوسُفَ",
+    "name": "يوسف",
     "englishName": "Yusuf",
-    "versesCount": 111,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 111
   },
   {
     "number": 13,
-    "name": "سُورَةُ الرَّعۡدِ",
+    "name": "الرعد",
     "englishName": "Ar-Ra'd",
-    "versesCount": 43,
-    "revelationType": "Medinan"
+    "revelationType": "Medinan",
+    "versesCount": 43
   },
   {
     "number": 14,
-    "name": "سُورَةُ إِبۡرَاهِيمَ",
+    "name": "إبراهيم",
     "englishName": "Ibrahim",
-    "versesCount": 52,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 52
   },
   {
     "number": 15,
-    "name": "سُورَةُ الحِجۡرِ",
+    "name": "الحجر",
     "englishName": "Al-Hijr",
-    "versesCount": 99,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 99
   },
   {
     "number": 16,
-    "name": "سُورَةُ النَّحۡلِ",
+    "name": "النحل",
     "englishName": "An-Nahl",
-    "versesCount": 128,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 128
   },
   {
     "number": 17,
-    "name": "سُورَةُ الإِسۡرَاءِ",
-    "englishName": "Al-Israa",
-    "versesCount": 111,
-    "revelationType": "Meccan"
+    "name": "الإسراء",
+    "englishName": "Al-Isra",
+    "revelationType": "Meccan",
+    "versesCount": 111
   },
   {
     "number": 18,
-    "name": "سُورَةُ الكَهۡفِ",
+    "name": "الكهف",
     "englishName": "Al-Kahf",
-    "versesCount": 110,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 110
   },
   {
     "number": 19,
-    "name": "سُورَةُ مَرۡيَمَ",
+    "name": "مريم",
     "englishName": "Maryam",
-    "versesCount": 98,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 98
   },
   {
     "number": 20,
-    "name": "سُورَةُ طه",
-    "englishName": "Taa-Haa",
-    "versesCount": 135,
-    "revelationType": "Meccan"
+    "name": "طه",
+    "englishName": "Ta-Ha",
+    "revelationType": "Meccan",
+    "versesCount": 135
   },
   {
     "number": 21,
-    "name": "سُورَةُ الأَنبِيَاءِ",
-    "englishName": "Al-Anbiyaa",
-    "versesCount": 112,
-    "revelationType": "Meccan"
+    "name": "الأنبياء",
+    "englishName": "Al-Anbiya",
+    "revelationType": "Meccan",
+    "versesCount": 112
   },
   {
     "number": 22,
-    "name": "سُورَةُ الحَجِّ",
+    "name": "الحج",
     "englishName": "Al-Hajj",
-    "versesCount": 78,
-    "revelationType": "Medinan"
+    "revelationType": "Medinan",
+    "versesCount": 78
   },
   {
     "number": 23,
-    "name": "سُورَةُ المُؤۡمِنُونَ",
-    "englishName": "Al-Muminoon",
-    "versesCount": 118,
-    "revelationType": "Meccan"
+    "name": "المؤمنون",
+    "englishName": "Al-Mu'minun",
+    "revelationType": "Meccan",
+    "versesCount": 118
   },
   {
     "number": 24,
-    "name": "سُورَةُ النُّورِ",
-    "englishName": "An-Noor",
-    "versesCount": 64,
-    "revelationType": "Medinan"
+    "name": "النور",
+    "englishName": "An-Nur",
+    "revelationType": "Medinan",
+    "versesCount": 64
   },
   {
     "number": 25,
-    "name": "سُورَةُ الفُرۡقَانِ",
-    "englishName": "Al-Furqaan",
-    "versesCount": 77,
-    "revelationType": "Meccan"
+    "name": "الفرقان",
+    "englishName": "Al-Furqan",
+    "revelationType": "Meccan",
+    "versesCount": 77
   },
   {
     "number": 26,
-    "name": "سُورَةُ الشُّعَرَاءِ",
-    "englishName": "Ash-Shu'araa",
-    "versesCount": 227,
-    "revelationType": "Meccan"
+    "name": "الشعراء",
+    "englishName": "Ash-Shu'ara",
+    "revelationType": "Meccan",
+    "versesCount": 227
   },
   {
     "number": 27,
-    "name": "سُورَةُ النَّمۡلِ",
+    "name": "النمل",
     "englishName": "An-Naml",
-    "versesCount": 93,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 93
   },
   {
     "number": 28,
-    "name": "سُورَةُ القَصَصِ",
+    "name": "القصص",
     "englishName": "Al-Qasas",
-    "versesCount": 88,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 88
   },
   {
     "number": 29,
-    "name": "سُورَةُ العَنكَبُوتِ",
-    "englishName": "Al-Ankaboot",
-    "versesCount": 69,
-    "revelationType": "Meccan"
+    "name": "العنكبوت",
+    "englishName": "Al-Ankabut",
+    "revelationType": "Meccan",
+    "versesCount": 69
   },
   {
     "number": 30,
-    "name": "سُورَةُ الرُّومِ",
-    "englishName": "Ar-Room",
-    "versesCount": 60,
-    "revelationType": "Meccan"
+    "name": "الروم",
+    "englishName": "Ar-Rum",
+    "revelationType": "Meccan",
+    "versesCount": 60
   },
   {
     "number": 31,
-    "name": "سُورَةُ لُقۡمَانَ",
+    "name": "لقمان",
     "englishName": "Luqman",
-    "versesCount": 34,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 34
   },
   {
     "number": 32,
-    "name": "سُورَةُ السَّجۡدَةِ",
+    "name": "السجدة",
     "englishName": "As-Sajda",
-    "versesCount": 30,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 30
   },
   {
     "number": 33,
-    "name": "سُورَةُ الأَحۡزَابِ",
-    "englishName": "Al-Ahzaab",
-    "versesCount": 73,
-    "revelationType": "Medinan"
+    "name": "الأحزاب",
+    "englishName": "Al-Ahzab",
+    "revelationType": "Medinan",
+    "versesCount": 73
   },
   {
     "number": 34,
-    "name": "سُورَةُ سَبَإٍ",
+    "name": "سبأ",
     "englishName": "Saba",
-    "versesCount": 54,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 54
   },
   {
     "number": 35,
-    "name": "سُورَةُ فَاطِرٍ",
-    "englishName": "Faatir",
-    "versesCount": 45,
-    "revelationType": "Meccan"
+    "name": "فاطر",
+    "englishName": "Fatir",
+    "revelationType": "Meccan",
+    "versesCount": 45
   },
   {
     "number": 36,
-    "name": "سُورَةُ يسٓ",
-    "englishName": "Yaseen",
-    "versesCount": 83,
-    "revelationType": "Meccan"
+    "name": "يس",
+    "englishName": "Ya-Sin",
+    "revelationType": "Meccan",
+    "versesCount": 83
   },
   {
     "number": 37,
-    "name": "سُورَةُ الصَّافَّاتِ",
-    "englishName": "As-Saaffaat",
-    "versesCount": 182,
-    "revelationType": "Meccan"
+    "name": "الصافات",
+    "englishName": "As-Saffat",
+    "revelationType": "Meccan",
+    "versesCount": 182
   },
   {
     "number": 38,
-    "name": "سُورَةُ صٓ",
-    "englishName": "Saad",
-    "versesCount": 88,
-    "revelationType": "Meccan"
+    "name": "ص",
+    "englishName": "Sad",
+    "revelationType": "Meccan",
+    "versesCount": 88
   },
   {
     "number": 39,
-    "name": "سُورَةُ الزُّمَرِ",
+    "name": "الزمر",
     "englishName": "Az-Zumar",
-    "versesCount": 75,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 75
   },
   {
     "number": 40,
-    "name": "سُورَةُ غَافِرٍ",
+    "name": "غافر",
     "englishName": "Ghafir",
-    "versesCount": 85,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 85
   },
   {
     "number": 41,
-    "name": "سُورَةُ فُصِّلَتۡ",
+    "name": "فصلت",
     "englishName": "Fussilat",
-    "versesCount": 54,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 54
   },
   {
     "number": 42,
-    "name": "سُورَةُ الشُّورَىٰ",
+    "name": "الشورى",
     "englishName": "Ash-Shura",
-    "versesCount": 53,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 53
   },
   {
     "number": 43,
-    "name": "سُورَةُ الزُّخۡرُفِ",
+    "name": "الزخرف",
     "englishName": "Az-Zukhruf",
-    "versesCount": 89,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 89
   },
   {
     "number": 44,
-    "name": "سُورَةُ الدُّخَانِ",
-    "englishName": "Ad-Dukhaan",
-    "versesCount": 59,
-    "revelationType": "Meccan"
+    "name": "الدخان",
+    "englishName": "Ad-Dukhan",
+    "revelationType": "Meccan",
+    "versesCount": 59
   },
   {
     "number": 45,
-    "name": "سُورَةُ الجَاثِيَةِ",
-    "englishName": "Al-Jaathiya",
-    "versesCount": 37,
-    "revelationType": "Meccan"
+    "name": "الجاثية",
+    "englishName": "Al-Jathiya",
+    "revelationType": "Meccan",
+    "versesCount": 37
   },
   {
     "number": 46,
-    "name": "سُورَةُ الأَحۡقَافِ",
+    "name": "الأحقاف",
     "englishName": "Al-Ahqaf",
-    "versesCount": 35,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 35
   },
   {
     "number": 47,
-    "name": "سُورَةُ مُحَمَّدٍ",
+    "name": "محمد",
     "englishName": "Muhammad",
-    "versesCount": 38,
-    "revelationType": "Medinan"
+    "revelationType": "Medinan",
+    "versesCount": 38
   },
   {
     "number": 48,
-    "name": "سُورَةُ الفَتۡحِ",
+    "name": "الفتح",
     "englishName": "Al-Fath",
-    "versesCount": 29,
-    "revelationType": "Medinan"
+    "revelationType": "Medinan",
+    "versesCount": 29
   },
   {
     "number": 49,
-    "name": "سُورَةُ الحُجُرَاتِ",
-    "englishName": "Al-Hujuraat",
-    "versesCount": 18,
-    "revelationType": "Medinan"
+    "name": "الحجرات",
+    "englishName": "Al-Hujurat",
+    "revelationType": "Medinan",
+    "versesCount": 18
   },
   {
     "number": 50,
-    "name": "سُورَةُ قٓ",
-    "englishName": "Qaaf",
-    "versesCount": 45,
-    "revelationType": "Meccan"
+    "name": "ق",
+    "englishName": "Qaf",
+    "revelationType": "Meccan",
+    "versesCount": 45
   },
   {
     "number": 51,
-    "name": "سُورَةُ الذَّارِيَاتِ",
-    "englishName": "Adh-Dhaariyat",
-    "versesCount": 60,
-    "revelationType": "Meccan"
+    "name": "الذاريات",
+    "englishName": "Adh-Dhariyat",
+    "revelationType": "Meccan",
+    "versesCount": 60
   },
   {
     "number": 52,
-    "name": "سُورَةُ الطُّورِ",
+    "name": "الطور",
     "englishName": "At-Tur",
-    "versesCount": 49,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 49
   },
   {
     "number": 53,
-    "name": "سُورَةُ النَّجۡمِ",
+    "name": "النجم",
     "englishName": "An-Najm",
-    "versesCount": 62,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 62
   },
   {
     "number": 54,
-    "name": "سُورَةُ القَمَرِ",
+    "name": "القمر",
     "englishName": "Al-Qamar",
-    "versesCount": 55,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 55
   },
   {
     "number": 55,
-    "name": "سُورَةُ الرَّحۡمَٰن",
-    "englishName": "Ar-Rahmaan",
-    "versesCount": 78,
-    "revelationType": "Medinan"
+    "name": "الرحمن",
+    "englishName": "Ar-Rahman",
+    "revelationType": "Medinan",
+    "versesCount": 78
   },
   {
     "number": 56,
-    "name": "سُورَةُ الوَاقِعَةِ",
-    "englishName": "Al-Waaqia",
-    "versesCount": 96,
-    "revelationType": "Meccan"
+    "name": "الواقعة",
+    "englishName": "Al-Waqi'a",
+    "revelationType": "Meccan",
+    "versesCount": 96
   },
   {
     "number": 57,
-    "name": "سُورَةُ الحَدِيدِ",
+    "name": "الحديد",
     "englishName": "Al-Hadid",
-    "versesCount": 29,
-    "revelationType": "Medinan"
+    "revelationType": "Medinan",
+    "versesCount": 29
   },
   {
     "number": 58,
-    "name": "سُورَةُ المُجَادلَةِ",
-    "englishName": "Al-Mujaadila",
-    "versesCount": 22,
-    "revelationType": "Medinan"
+    "name": "المجادلة",
+    "englishName": "Al-Mujadila",
+    "revelationType": "Medinan",
+    "versesCount": 22
   },
   {
     "number": 59,
-    "name": "سُورَةُ الحَشۡرِ",
+    "name": "الحشر",
     "englishName": "Al-Hashr",
-    "versesCount": 24,
-    "revelationType": "Medinan"
+    "revelationType": "Medinan",
+    "versesCount": 24
   },
   {
     "number": 60,
-    "name": "سُورَةُ المُمۡتَحنَةِ",
-    "englishName": "Al-Mumtahana",
-    "versesCount": 13,
-    "revelationType": "Medinan"
+    "name": "الممتحنة",
+    "englishName": "Al-Mumtahina",
+    "revelationType": "Medinan",
+    "versesCount": 13
   },
   {
     "number": 61,
-    "name": "سُورَةُ الصَّفِّ",
+    "name": "الصف",
     "englishName": "As-Saff",
-    "versesCount": 14,
-    "revelationType": "Medinan"
+    "revelationType": "Medinan",
+    "versesCount": 14
   },
   {
     "number": 62,
-    "name": "سُورَةُ الجُمُعَةِ",
+    "name": "الجمعة",
     "englishName": "Al-Jumu'a",
-    "versesCount": 11,
-    "revelationType": "Medinan"
+    "revelationType": "Medinan",
+    "versesCount": 11
   },
   {
     "number": 63,
-    "name": "سُورَةُ المُنَافِقُونَ",
-    "englishName": "Al-Munaafiqoon",
-    "versesCount": 11,
-    "revelationType": "Medinan"
+    "name": "المنافقون",
+    "englishName": "Al-Munafiqun",
+    "revelationType": "Medinan",
+    "versesCount": 11
   },
   {
     "number": 64,
-    "name": "سُورَةُ التَّغَابُنِ",
-    "englishName": "At-Taghaabun",
-    "versesCount": 18,
-    "revelationType": "Medinan"
+    "name": "التغابن",
+    "englishName": "At-Taghabun",
+    "revelationType": "Medinan",
+    "versesCount": 18
   },
   {
     "number": 65,
-    "name": "سُورَةُ الطَّلَاقِ",
-    "englishName": "At-Talaaq",
-    "versesCount": 12,
-    "revelationType": "Medinan"
+    "name": "الطلاق",
+    "englishName": "At-Talaq",
+    "revelationType": "Medinan",
+    "versesCount": 12
   },
   {
     "number": 66,
-    "name": "سُورَةُ التَّحۡرِيمِ",
+    "name": "التحريم",
     "englishName": "At-Tahrim",
-    "versesCount": 12,
-    "revelationType": "Medinan"
+    "revelationType": "Medinan",
+    "versesCount": 12
   },
   {
     "number": 67,
-    "name": "سُورَةُ المُلۡكِ",
+    "name": "الملك",
     "englishName": "Al-Mulk",
-    "versesCount": 30,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 30
   },
   {
     "number": 68,
-    "name": "سُورَةُ القَلَمِ",
+    "name": "القلم",
     "englishName": "Al-Qalam",
-    "versesCount": 52,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 52
   },
   {
     "number": 69,
-    "name": "سُورَةُ الحَاقَّةِ",
-    "englishName": "Al-Haaqqa",
-    "versesCount": 52,
-    "revelationType": "Meccan"
+    "name": "الحاقة",
+    "englishName": "Al-Haqqa",
+    "revelationType": "Meccan",
+    "versesCount": 52
   },
   {
     "number": 70,
-    "name": "سُورَةُ المَعَارِجِ",
-    "englishName": "Al-Ma'aarij",
-    "versesCount": 44,
-    "revelationType": "Meccan"
+    "name": "المعارج",
+    "englishName": "Al-Ma'arij",
+    "revelationType": "Meccan",
+    "versesCount": 44
   },
   {
     "number": 71,
-    "name": "سُورَةُ نُوحٍ",
-    "englishName": "Nooh",
-    "versesCount": 28,
-    "revelationType": "Meccan"
+    "name": "نوح",
+    "englishName": "Nuh",
+    "revelationType": "Meccan",
+    "versesCount": 28
   },
   {
     "number": 72,
-    "name": "سُورَةُ الجِنِّ",
+    "name": "الجن",
     "englishName": "Al-Jinn",
-    "versesCount": 28,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 28
   },
   {
     "number": 73,
-    "name": "سُورَةُ المُزَّمِّلِ",
+    "name": "المزمل",
     "englishName": "Al-Muzzammil",
-    "versesCount": 20,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 20
   },
   {
     "number": 74,
-    "name": "سُورَةُ المُدَّثِّرِ",
+    "name": "المدثر",
     "englishName": "Al-Muddaththir",
-    "versesCount": 56,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 56
   },
   {
     "number": 75,
-    "name": "سُورَةُ القِيَامَةِ",
-    "englishName": "Al-Qiyaama",
-    "versesCount": 40,
-    "revelationType": "Meccan"
+    "name": "القيامة",
+    "englishName": "Al-Qiyama",
+    "revelationType": "Meccan",
+    "versesCount": 40
   },
   {
     "number": 76,
-    "name": "سُورَةُ الإِنسَانِ",
-    "englishName": "Al-Insaan",
-    "versesCount": 31,
-    "revelationType": "Medinan"
+    "name": "الإنسان",
+    "englishName": "Al-Insan",
+    "revelationType": "Medinan",
+    "versesCount": 31
   },
   {
     "number": 77,
-    "name": "سُورَةُ المُرۡسَلَاتِ",
-    "englishName": "Al-Mursalaat",
-    "versesCount": 50,
-    "revelationType": "Meccan"
+    "name": "المرسلات",
+    "englishName": "Al-Mursalat",
+    "revelationType": "Meccan",
+    "versesCount": 50
   },
   {
     "number": 78,
-    "name": "سُورَةُ النَّبَإِ",
+    "name": "النبأ",
     "englishName": "An-Naba",
-    "versesCount": 40,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 40
   },
   {
     "number": 79,
-    "name": "سُورَةُ النَّازِعَاتِ",
-    "englishName": "An-Naazi'aat",
-    "versesCount": 46,
-    "revelationType": "Meccan"
+    "name": "النازعات",
+    "englishName": "An-Nazi'at",
+    "revelationType": "Meccan",
+    "versesCount": 46
   },
   {
     "number": 80,
-    "name": "سُورَةُ عَبَسَ",
+    "name": "عبس",
     "englishName": "Abasa",
-    "versesCount": 42,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 42
   },
   {
     "number": 81,
-    "name": "سُورَةُ التَّكۡوِيرِ",
+    "name": "التكوير",
     "englishName": "At-Takwir",
-    "versesCount": 29,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 29
   },
   {
     "number": 82,
-    "name": "سُورَةُ الانفِطَارِ",
-    "englishName": "Al-Infitaar",
-    "versesCount": 19,
-    "revelationType": "Meccan"
+    "name": "الانفطار",
+    "englishName": "Al-Infitar",
+    "revelationType": "Meccan",
+    "versesCount": 19
   },
   {
     "number": 83,
-    "name": "سُورَةُ المُطَفِّفِينَ",
+    "name": "المطففين",
     "englishName": "Al-Mutaffifin",
-    "versesCount": 36,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 36
   },
   {
     "number": 84,
-    "name": "سُورَةُ الانشِقَاقِ",
-    "englishName": "Al-Inshiqaaq",
-    "versesCount": 25,
-    "revelationType": "Meccan"
+    "name": "الانشقاق",
+    "englishName": "Al-Inshiqaq",
+    "revelationType": "Meccan",
+    "versesCount": 25
   },
   {
     "number": 85,
-    "name": "سُورَةُ البُرُوجِ",
-    "englishName": "Al-Burooj",
-    "versesCount": 22,
-    "revelationType": "Meccan"
+    "name": "البروج",
+    "englishName": "Al-Buruj",
+    "revelationType": "Meccan",
+    "versesCount": 22
   },
   {
     "number": 86,
-    "name": "سُورَةُ الطَّارِقِ",
-    "englishName": "At-Taariq",
-    "versesCount": 17,
-    "revelationType": "Meccan"
+    "name": "الطارق",
+    "englishName": "At-Tariq",
+    "revelationType": "Meccan",
+    "versesCount": 17
   },
   {
     "number": 87,
-    "name": "سُورَةُ الأَعۡلَىٰ",
-    "englishName": "Al-A'laa",
-    "versesCount": 19,
-    "revelationType": "Meccan"
+    "name": "الأعلى",
+    "englishName": "Al-A'la",
+    "revelationType": "Meccan",
+    "versesCount": 19
   },
   {
     "number": 88,
-    "name": "سُورَةُ الغَاشِيَةِ",
-    "englishName": "Al-Ghaashiya",
-    "versesCount": 26,
-    "revelationType": "Meccan"
+    "name": "الغاشية",
+    "englishName": "Al-Ghashiya",
+    "revelationType": "Meccan",
+    "versesCount": 26
   },
   {
     "number": 89,
-    "name": "سُورَةُ الفَجۡرِ",
+    "name": "الفجر",
     "englishName": "Al-Fajr",
-    "versesCount": 30,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 30
   },
   {
     "number": 90,
-    "name": "سُورَةُ البَلَدِ",
+    "name": "البلد",
     "englishName": "Al-Balad",
-    "versesCount": 20,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 20
   },
   {
     "number": 91,
-    "name": "سُورَةُ الشَّمۡسِ",
+    "name": "الشمس",
     "englishName": "Ash-Shams",
-    "versesCount": 15,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 15
   },
   {
     "number": 92,
-    "name": "سُورَةُ اللَّيۡلِ",
-    "englishName": "Al-Lail",
-    "versesCount": 21,
-    "revelationType": "Meccan"
+    "name": "الليل",
+    "englishName": "Al-Layl",
+    "revelationType": "Meccan",
+    "versesCount": 21
   },
   {
     "number": 93,
-    "name": "سُورَةُ الضُّحَىٰ",
-    "englishName": "Ad-Dhuhaa",
-    "versesCount": 11,
-    "revelationType": "Meccan"
+    "name": "الضحى",
+    "englishName": "Ad-Duha",
+    "revelationType": "Meccan",
+    "versesCount": 11
   },
   {
     "number": 94,
-    "name": "سُورَةُ الشَّرۡحِ",
+    "name": "الشرح",
     "englishName": "Ash-Sharh",
-    "versesCount": 8,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 8
   },
   {
     "number": 95,
-    "name": "سُورَةُ التِّينِ",
+    "name": "التين",
     "englishName": "At-Tin",
-    "versesCount": 8,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 8
   },
   {
     "number": 96,
-    "name": "سُورَةُ العَلَقِ",
+    "name": "العلق",
     "englishName": "Al-Alaq",
-    "versesCount": 19,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 19
   },
   {
     "number": 97,
-    "name": "سُورَةُ القَدۡرِ",
+    "name": "القدر",
     "englishName": "Al-Qadr",
-    "versesCount": 5,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 5
   },
   {
     "number": 98,
-    "name": "سُورَةُ البَيِّنَةِ",
+    "name": "البينة",
     "englishName": "Al-Bayyina",
-    "versesCount": 8,
-    "revelationType": "Medinan"
+    "revelationType": "Medinan",
+    "versesCount": 8
   },
   {
     "number": 99,
-    "name": "سُورَةُ الزَّلۡزَلَةِ",
+    "name": "الزلزلة",
     "englishName": "Az-Zalzala",
-    "versesCount": 8,
-    "revelationType": "Medinan"
+    "revelationType": "Medinan",
+    "versesCount": 8
   },
   {
     "number": 100,
-    "name": "سُورَةُ العَادِيَاتِ",
-    "englishName": "Al-Aadiyaat",
-    "versesCount": 11,
-    "revelationType": "Meccan"
+    "name": "العاديات",
+    "englishName": "Al-Adiyat",
+    "revelationType": "Meccan",
+    "versesCount": 11
   },
   {
     "number": 101,
-    "name": "سُورَةُ القَارِعَةِ",
-    "englishName": "Al-Qaari'a",
-    "versesCount": 11,
-    "revelationType": "Meccan"
+    "name": "القارعة",
+    "englishName": "Al-Qari'a",
+    "revelationType": "Meccan",
+    "versesCount": 11
   },
   {
     "number": 102,
-    "name": "سُورَةُ التَّكَاثُرِ",
-    "englishName": "At-Takaathur",
-    "versesCount": 8,
-    "revelationType": "Meccan"
+    "name": "التكاثر",
+    "englishName": "At-Takathur",
+    "revelationType": "Meccan",
+    "versesCount": 8
   },
   {
     "number": 103,
-    "name": "سُورَةُ العَصۡرِ",
+    "name": "العصر",
     "englishName": "Al-Asr",
-    "versesCount": 3,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 3
   },
   {
     "number": 104,
-    "name": "سُورَةُ الهُمَزَةِ",
+    "name": "الهمزة",
     "englishName": "Al-Humaza",
-    "versesCount": 9,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 9
   },
   {
     "number": 105,
-    "name": "سُورَةُ الفِيلِ",
+    "name": "الفيل",
     "englishName": "Al-Fil",
-    "versesCount": 5,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 5
   },
   {
     "number": 106,
-    "name": "سُورَةُ قُرَيۡشٍ",
-    "englishName": "Quraish",
-    "versesCount": 4,
-    "revelationType": "Meccan"
+    "name": "قريش",
+    "englishName": "Quraysh",
+    "revelationType": "Meccan",
+    "versesCount": 4
   },
   {
     "number": 107,
-    "name": "سُورَةُ المَاعُونِ",
-    "englishName": "Al-Maa'un",
-    "versesCount": 7,
-    "revelationType": "Meccan"
+    "name": "الماعون",
+    "englishName": "Al-Ma'un",
+    "revelationType": "Meccan",
+    "versesCount": 7
   },
   {
     "number": 108,
-    "name": "سُورَةُ الكَوۡثَرِ",
+    "name": "الكوثر",
     "englishName": "Al-Kawthar",
-    "versesCount": 3,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 3
   },
   {
     "number": 109,
-    "name": "سُورَةُ الكَافِرُونَ",
-    "englishName": "Al-Kaafiroon",
-    "versesCount": 6,
-    "revelationType": "Meccan"
+    "name": "الكافرون",
+    "englishName": "Al-Kafirun",
+    "revelationType": "Meccan",
+    "versesCount": 6
   },
   {
     "number": 110,
-    "name": "سُورَةُ النَّصۡرِ",
+    "name": "النصر",
     "englishName": "An-Nasr",
-    "versesCount": 3,
-    "revelationType": "Medinan"
+    "revelationType": "Medinan",
+    "versesCount": 3
   },
   {
     "number": 111,
-    "name": "سُورَةُ المَسَدِ",
+    "name": "المسد",
     "englishName": "Al-Masad",
-    "versesCount": 5,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 5
   },
   {
     "number": 112,
-    "name": "سُورَةُ الإِخۡلَاصِ",
-    "englishName": "Al-Ikhlaas",
-    "versesCount": 4,
-    "revelationType": "Meccan"
+    "name": "الإخلاص",
+    "englishName": "Al-Ikhlas",
+    "revelationType": "Meccan",
+    "versesCount": 4
   },
   {
     "number": 113,
-    "name": "سُورَةُ الفَلَقِ",
+    "name": "الفلق",
     "englishName": "Al-Falaq",
-    "versesCount": 5,
-    "revelationType": "Meccan"
+    "revelationType": "Meccan",
+    "versesCount": 5
   },
   {
     "number": 114,
-    "name": "سُورَةُ النَّاسِ",
-    "englishName": "An-Naas",
-    "versesCount": 6,
-    "revelationType": "Meccan"
+    "name": "الناس",
+    "englishName": "An-Nas",
+    "revelationType": "Meccan",
+    "versesCount": 6
   }
 ]

@@ -184,8 +184,8 @@ describe('QuranValidator', () => {
       const surah = validator.getSurah(1);
 
       expect(surah).toBeDefined();
-      expect(surah?.name).toContain('ٱلْفَاتِحَةِ');
-      expect(surah?.englishName).toBe('Al-Faatiha');
+      expect(surah?.name).toContain('الفاتحة');
+      expect(surah?.englishName).toBe('Al-Fatiha');
       expect(surah?.versesCount).toBe(7);
     });
 
