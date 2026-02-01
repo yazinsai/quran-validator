@@ -5,32 +5,45 @@
  *
  * @packageDocumentation
  *
- * @example
+ * @example Basic Validation
  * ```ts
  * import { QuranValidator } from 'quran-validator';
  *
  * const validator = new QuranValidator();
  *
  * // Validate a specific quote
- * const result = validator.validate("بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ");
+ * const result = validator.validate("بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ");
  * console.log(result.isValid); // true
  * console.log(result.reference); // "1:1"
- * console.log(result.confidence); // 1.0
+ * ```
  *
- * // Detect and validate all Quran quotes in LLM output
- * const detection = validator.detectAndValidate(llmOutput);
- * for (const segment of detection.segments) {
- *   if (segment.validation?.isValid) {
- *     console.log(`Valid: ${segment.validation.reference}`);
- *   } else {
- *     console.log(`Invalid or not a Quran verse`);
- *   }
- * }
+ * @example LLM Integration (Recommended)
+ * ```ts
+ * import { LLMProcessor, SYSTEM_PROMPTS } from 'quran-validator';
+ *
+ * // 1. Add system prompt to your LLM
+ * const systemPrompt = SYSTEM_PROMPTS.xml;
+ *
+ * // 2. Process LLM response
+ * const processor = new LLMProcessor();
+ * const result = processor.process(llmResponse);
+ *
+ * // 3. Use corrected text
+ * console.log(result.correctedText);
+ * console.log(result.allValid); // true if all quotes are authentic
  * ```
  */
 
 // Main validator
 export { QuranValidator, createValidator } from './validator';
+
+// LLM Integration (recommended for processing LLM output)
+export {
+  LLMProcessor,
+  createLLMProcessor,
+  quickValidate,
+  SYSTEM_PROMPTS,
+} from './llm-integration';
 
 // Normalization utilities
 export {
@@ -52,3 +65,9 @@ export type {
   MatchType,
   NormalizationOptions,
 } from './types';
+
+export type {
+  ProcessedOutput,
+  QuoteAnalysis,
+  LLMProcessorOptions,
+} from './llm-integration';
