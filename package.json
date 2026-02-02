@@ -1,6 +1,6 @@
 {
   "name": "quran-validator",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Validate and verify Quranic verses in LLM-generated text with 100% accuracy",
   "main": "dist/index.js",
   "module": "dist/index.mjs",

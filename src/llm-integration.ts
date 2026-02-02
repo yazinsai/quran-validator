@@ -8,6 +8,7 @@
  */
 
 import { QuranValidator } from './validator';
+import { normalizeArabic, calculateSimilarity } from './normalizer';
 
 /**
  * Result of processing LLM output for Quran validation
@@ -68,9 +69,9 @@ const QURAN_CONTEXT_PATTERNS = [
   /(?:Allah\s+says?|God\s+says?|the\s+Quran\s+says?|in\s+the\s+Quran|Quranic\s+verse|verse\s+states?|ayah|ayat|surah)\s*[:\-]?\s*/gi,
   // Arabic patterns
   /(?:قال\s+الله|قال\s+تعالى|يقول\s+الله|في\s+القرآن|الآية|سورة)\s*[:\-]?\s*/g,
-  // Reference patterns like (2:255) or [Al-Baqarah:255]
-  /\(?\d{1,3}:\d{1,3}\)?/g,
-  /\[[\w\-]+:\d+\]/g,
+  // Reference patterns like (2:255) or (2:255-257) or [Al-Baqarah:255]
+  /\(?\d{1,3}:\d{1,3}(?:-\d{1,3})?\)?/g,
+  /\[[\w\-]+:\d+(?:-\d+)?\]/g,
 ];
 
 /**
@@ -83,11 +84,15 @@ export const SYSTEM_PROMPTS = {
   xml: `When quoting verses from the Quran, you MUST use this exact format:
 <quran ref="SURAH:AYAH">ARABIC_TEXT</quran>
 
-Example:
+For multiple consecutive verses, use a range:
+<quran ref="SURAH:START-END">ARABIC_TEXT</quran>
+
+Examples:
 <quran ref="1:1">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</quran>
+<quran ref="112:1-4">قُلْ هُوَ ٱللَّهُ أَحَدٌ ٱللَّهُ ٱلصَّمَدُ لَمْ يَلِدْ وَلَمْ يُولَدْ وَلَمْ يَكُن لَّهُۥ كُفُوًا أَحَدٌۢ</quran>
 
 Rules:
-- Always include the reference (surah:ayah number)
+- Always include the reference (surah:ayah or surah:start-end for ranges)
 - Use the exact Arabic text with full diacritics if possible
 - Never paraphrase or partially quote without indication
 - If unsure of exact wording, say "approximately" before the quote`,
@@ -100,34 +105,69 @@ Rules:
 ARABIC_TEXT
 \`\`\`
 
+For verse ranges, use:
+\`\`\`quran ref="SURAH:START-END"
+ARABIC_TEXT
+\`\`\`
+
 Example:
-\`\`\`quran ref="112:1"
-قُلْ هُوَ ٱللَّهُ أَحَدٌ
+\`\`\`quran ref="112:1-4"
+قُلْ هُوَ ٱللَّهُ أَحَدٌ ٱللَّهُ ٱلصَّمَدُ لَمْ يَلِدْ وَلَمْ يُولَدْ وَلَمْ يَكُن لَّهُۥ كُفُوًا أَحَدٌۢ
 \`\`\``,
 
   /**
    * Bracket-style tagging (simpler)
    */
   bracket: `When quoting Quran verses, use: [[Q:SURAH:AYAH|ARABIC_TEXT]]
+For verse ranges: [[Q:SURAH:START-END|ARABIC_TEXT]]
 
-Example: [[Q:1:1|بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ]]`,
+Example: [[Q:1:1|بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ]]
+Example range: [[Q:112:1-4|قُلْ هُوَ ٱللَّهُ أَحَدٌ ٱللَّهُ ٱلصَّمَدُ لَمْ يَلِدْ وَلَمْ يُولَدْ وَلَمْ يَكُن لَّهُۥ كُفُوًا أَحَدٌۢ]]`,
 
   /**
    * Minimal instruction (for models that don't follow complex formats)
    */
-  minimal: `Always cite Quran verses with their reference number in parentheses immediately after, like: "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ (1:1)"`,
+  minimal: `Always cite Quran verses with their reference number in parentheses immediately after, like: "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ (1:1)" or for ranges "... (112:1-4)"`,
 };
 
 /**
  * Regex patterns for extracting tagged quotes
+ * Supports both single verses (1:1) and verse ranges (1:1-7, 107:1-3)
  */
 const TAG_PATTERNS = {
-  xml: /<quran\s+ref=["'](\d+:\d+)["']>([\s\S]*?)<\/quran>/gi,
-  markdown: /```quran\s+ref=["'](\d+:\d+)["']\n([\s\S]*?)\n```/gi,
-  bracket: /\[\[Q:(\d+:\d+)\|([\s\S]*?)\]\]/gi,
-  // Also match inline references like "text (1:1)"
-  inlineRef: /([\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\s]+)\s*\((\d+:\d+)\)/g,
+  xml: /<quran\s+ref=["'](\d+:\d+(?:-\d+)?)["']>([\s\S]*?)<\/quran>/gi,
+  markdown: /```quran\s+ref=["'](\d+:\d+(?:-\d+)?)["']\n([\s\S]*?)\n```/gi,
+  bracket: /\[\[Q:(\d+:\d+(?:-\d+)?)\|([\s\S]*?)\]\]/gi,
+  // Also match inline references like "text (1:1)" or "text (1:1-3)"
+  inlineRef: /([\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\s]+)\s*\((\d+:\d+(?:-\d+)?)\)/g,
 };
+
+/**
+ * Parse a verse reference, supporting both single verses and ranges
+ * @param ref - Reference string like "1:1" or "2:255-257"
+ * @returns Parsed reference with surah, startAyah, and optional endAyah
+ */
+function parseReference(ref: string): {
+  surah: number;
+  startAyah: number;
+  endAyah?: number;
+  isRange: boolean;
+} | null {
+  // Match patterns like "1:1" or "2:255-257"
+  const match = ref.match(/^(\d+):(\d+)(?:-(\d+))?$/);
+  if (!match) return null;
+
+  const surah = parseInt(match[1], 10);
+  const startAyah = parseInt(match[2], 10);
+  const endAyah = match[3] ? parseInt(match[3], 10) : undefined;
+
+  return {
+    surah,
+    startAyah,
+    endAyah,
+    isRange: endAyah !== undefined,
+  };
+}
 
 /**
  * LLM Output Processor
@@ -439,6 +479,22 @@ export class LLMProcessor {
     endIndex: number,
     detectionMethod: 'tagged' | 'contextual' | 'fuzzy'
   ): QuoteAnalysis {
+    // Check if this is a verse range reference
+    if (expectedRef) {
+      const parsed = parseReference(expectedRef);
+      if (parsed?.isRange && parsed.endAyah) {
+        return this.analyzeRangeQuote(
+          text,
+          expectedRef,
+          parsed,
+          startIndex,
+          endIndex,
+          detectionMethod
+        );
+      }
+    }
+
+    // Single verse validation
     const validation = this.validator.validate(text);
 
     let isValid = validation.isValid;
@@ -465,8 +521,74 @@ export class LLMProcessor {
       original: text,
       corrected,
       isValid,
-      reference: validation.reference,
+      reference: validation.reference || expectedRef,
       confidence: validation.confidence,
+      detectionMethod,
+      startIndex,
+      endIndex,
+      wasCorrected,
+    };
+  }
+
+  /**
+   * Analyze a quote that references a verse range (e.g., 107:1-3)
+   */
+  private analyzeRangeQuote(
+    text: string,
+    expectedRef: string,
+    parsed: { surah: number; startAyah: number; endAyah?: number },
+    startIndex: number,
+    endIndex: number,
+    detectionMethod: 'tagged' | 'contextual' | 'fuzzy'
+  ): QuoteAnalysis {
+    const { surah, startAyah, endAyah } = parsed;
+
+    // Get the verse range from validator
+    const range = this.validator.getVerseRange(surah, startAyah, endAyah!);
+
+    if (!range) {
+      // Invalid range - verses don't exist
+      return {
+        original: text,
+        corrected: text,
+        isValid: false,
+        reference: expectedRef,
+        confidence: 0,
+        detectionMethod,
+        startIndex,
+        endIndex,
+        wasCorrected: false,
+      };
+    }
+
+    // Compare the quoted text against the concatenated verse range
+    const normalizedInput = normalizeArabic(text);
+    const normalizedRange = normalizeArabic(range.text);
+
+    // Calculate similarity
+    const similarity = calculateSimilarity(normalizedInput, normalizedRange);
+
+    // Check for exact match
+    const isExact = text.trim() === range.text;
+    const isNormalizedMatch = normalizedInput === normalizedRange;
+
+    let isValid = isExact || isNormalizedMatch || similarity >= 0.85;
+    let wasCorrected = false;
+    let corrected = text;
+    let confidence = isExact ? 1.0 : isNormalizedMatch ? 0.95 : similarity;
+
+    // Auto-correct if needed
+    if (isValid && !isExact) {
+      corrected = range.text;
+      wasCorrected = true;
+    }
+
+    return {
+      original: text,
+      corrected,
+      isValid,
+      reference: expectedRef,
+      confidence,
       detectionMethod,
       startIndex,
       endIndex,

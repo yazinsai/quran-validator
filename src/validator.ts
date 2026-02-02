@@ -231,6 +231,35 @@ export class QuranValidator {
   }
 
   /**
+   * Get a range of verses and concatenate their text
+   *
+   * @param surah - Surah number (1-114)
+   * @param startAyah - Starting ayah number
+   * @param endAyah - Ending ayah number
+   * @returns Object with concatenated text and verses array, or undefined if invalid range
+   */
+  getVerseRange(
+    surah: number,
+    startAyah: number,
+    endAyah: number
+  ): { text: string; textSimple: string; verses: QuranVerse[] } | undefined {
+    if (startAyah > endAyah) return undefined;
+
+    const verses: QuranVerse[] = [];
+    for (let ayah = startAyah; ayah <= endAyah; ayah++) {
+      const verse = this.getVerse(surah, ayah);
+      if (!verse) return undefined; // Invalid range
+      verses.push(verse);
+    }
+
+    return {
+      text: verses.map((v) => v.text).join(' '),
+      textSimple: verses.map((v) => v.textSimple).join(' '),
+      verses,
+    };
+  }
+
+  /**
    * Get all verses in a surah
    *
    * @param surahNumber - Surah number (1-114)

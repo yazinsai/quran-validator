@@ -86,6 +86,28 @@ for (const warning of result.warnings) {
 }
 ```
 
+## Verse Range Support
+
+The library supports verse ranges for quoting multiple consecutive verses:
+
+```typescript
+// Single verse
+<quran ref="1:1">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</quran>
+
+// Verse range (e.g., Surah Al-Ikhlas 112:1-4)
+<quran ref="112:1-4">قُلْ هُوَ ٱللَّهُ أَحَدٌ ٱللَّهُ ٱلصَّمَدُ لَمْ يَلِدْ وَلَمْ يُولَدْ وَلَمْ يَكُن لَّهُۥ كُفُوًا أَحَدٌۢ</quran>
+```
+
+You can also look up verse ranges programmatically:
+
+```typescript
+const validator = new QuranValidator();
+const range = validator.getVerseRange(112, 1, 4); // Surah 112, verses 1-4
+
+console.log(range.text);   // Concatenated Arabic text
+console.log(range.verses); // Array of 4 QuranVerse objects
+```
+
 ## System Prompt Formats
 
 The library supports multiple tagging formats:
@@ -94,6 +116,7 @@ The library supports multiple tagging formats:
 ```typescript
 SYSTEM_PROMPTS.xml
 // LLM outputs: <quran ref="1:1">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</quran>
+// Or for ranges: <quran ref="112:1-4">...</quran>
 ```
 
 ### Markdown
