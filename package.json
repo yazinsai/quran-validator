@@ -40,7 +40,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yazin/quran-validator"
+    "url": "https://github.com/yazinsai/quran-validator"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
