@@ -464,10 +464,19 @@ function LeaderboardSection({
   onHighlightClear: () => void;
 }) {
   const [search, setSearch] = useState('');
+  const [expanded, setExpanded] = useState(false);
+  const [page, setPage] = useState(1);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const PAGE_SIZE = 100;
 
   // Top 3 results
   const top3 = leaderboard.slice(0, 3);
+  const rest = leaderboard.slice(3);
+
+  // Paginated rest results when expanded
+  const totalPages = Math.ceil(rest.length / PAGE_SIZE);
+  const paginatedRest = expanded ? rest.slice(0, page * PAGE_SIZE) : [];
 
   // Search result (if searching and result not in top 3)
   const searchResult = search.trim()
@@ -579,13 +588,57 @@ function LeaderboardSection({
             </div>
           )}
 
-          {/* Show count if more than 3 and not searching */}
-          {!search.trim() && leaderboard.length > 3 && (
-            <div className="text-center pt-2">
-              <span className="text-xs text-charcoal-muted">
-                +{leaderboard.length - 3} more · use search to find
-              </span>
-            </div>
+          {/* Expanded results */}
+          {!search.trim() && expanded && paginatedRest.length > 0 && (
+            <>
+              <div className="flex items-center gap-3 py-2">
+                <div className="flex-1 h-px bg-sand" />
+                <span className="text-xs text-charcoal-muted">
+                  All results
+                </span>
+                <div className="flex-1 h-px bg-sand" />
+              </div>
+              {paginatedRest.map((result, index) => (
+                <ResultCard
+                  key={result.modelId}
+                  result={result}
+                  rank={index + 4}
+                  isHighlighted={highlightedModelId === result.modelId}
+                  onHighlightClear={onHighlightClear}
+                />
+              ))}
+              {/* Load more / pagination */}
+              {page * PAGE_SIZE < rest.length && (
+                <button
+                  onClick={() => setPage(p => p + 1)}
+                  className="w-full py-3 text-sm text-sage hover:text-sage-dark font-medium transition-colors"
+                >
+                  Load more ({rest.length - page * PAGE_SIZE} remaining)
+                </button>
+              )}
+            </>
+          )}
+
+          {/* Click to expand if more than 3 and not searching */}
+          {!search.trim() && !expanded && rest.length > 0 && (
+            <button
+              onClick={() => setExpanded(true)}
+              className="w-full py-3 text-sm text-charcoal-muted hover:text-charcoal transition-colors flex items-center justify-center gap-2"
+            >
+              <Icon icon="solar:alt-arrow-down-linear" className="w-4 h-4" />
+              Show all ({rest.length} more)
+            </button>
+          )}
+
+          {/* Collapse button when expanded */}
+          {!search.trim() && expanded && rest.length > 0 && (
+            <button
+              onClick={() => { setExpanded(false); setPage(1); }}
+              className="w-full py-3 text-sm text-charcoal-muted hover:text-charcoal transition-colors flex items-center justify-center gap-2"
+            >
+              <Icon icon="solar:alt-arrow-up-linear" className="w-4 h-4" />
+              Collapse
+            </button>
           )}
         </div>
       )}
