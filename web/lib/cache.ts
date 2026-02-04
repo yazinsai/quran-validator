@@ -34,6 +34,7 @@ export interface PromptResult {
   totalCount: number;
   accuracy: number;
   noArabicContent: boolean;  // Model didn't provide any Arabic
+  rawResponse?: string;  // Store raw model response for debugging
 }
 
 export interface CachedResult {

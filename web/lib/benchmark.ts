@@ -139,6 +139,7 @@ async function runSinglePrompt(
       totalCount: 0,
       accuracy: 0,
       noArabicContent: true,
+      rawResponse: content,
     };
   }
 
@@ -194,6 +195,7 @@ async function runSinglePrompt(
     totalCount,
     accuracy,
     noArabicContent: false,
+    rawResponse: content,
   };
 }
 

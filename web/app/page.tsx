@@ -153,6 +153,8 @@ function QuoteDetail({ quote }: { quote: CachedResult['quotes'][0] }) {
 
 function PromptResultSection({ result }: { result: PromptResult }) {
   const promptInfo = getPromptTypeLabel(result.promptType);
+  const [showResponse, setShowResponse] = useState(false);
+  const hasNoQuotes = result.quotes.length === 0;
 
   return (
     <div className="space-y-3">
@@ -175,9 +177,32 @@ function PromptResultSection({ result }: { result: PromptResult }) {
       {result.quotes.map((quote, i) => (
         <QuoteDetail key={i} quote={quote} />
       ))}
-      {result.noArabicContent && (
-        <div className="pl-6 py-2 text-sm text-charcoal-muted">
-          Model did not include any Arabic text in response.
+
+      {/* Show raw response toggle - especially useful when no quotes */}
+      {result.rawResponse && (
+        <div className="pl-6">
+          {hasNoQuotes && !showResponse ? (
+            <button
+              onClick={() => setShowResponse(true)}
+              className="text-xs text-sage hover:text-sage-dark flex items-center gap-1"
+            >
+              <Icon icon="solar:eye-linear" className="w-3.5 h-3.5" />
+              Show model response
+            </button>
+          ) : hasNoQuotes || showResponse ? (
+            <div className="space-y-2">
+              <button
+                onClick={() => setShowResponse(false)}
+                className="text-xs text-charcoal-muted hover:text-charcoal flex items-center gap-1"
+              >
+                <Icon icon="solar:eye-closed-linear" className="w-3.5 h-3.5" />
+                Hide response
+              </button>
+              <div className="p-3 bg-cream rounded-lg text-sm text-charcoal-light whitespace-pre-wrap max-h-48 overflow-y-auto border border-sand">
+                {result.rawResponse}
+              </div>
+            </div>
+          ) : null}
         </div>
       )}
     </div>
