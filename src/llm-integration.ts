@@ -8,7 +8,7 @@
  */
 
 import { QuranValidator } from './validator';
-import { normalizeArabic, calculateSimilarity } from './normalizer';
+import { normalizeArabic } from './normalizer';
 
 /**
  * Result of processing LLM output for Quran validation
@@ -36,8 +36,6 @@ export interface QuoteAnalysis {
   isValid: boolean;
   /** Reference if identified (e.g., "2:255") */
   reference?: string;
-  /** Confidence score */
-  confidence: number;
   /** How this quote was detected */
   detectionMethod: 'tagged' | 'contextual' | 'fuzzy';
   /** Position in original text */
@@ -45,6 +43,10 @@ export interface QuoteAnalysis {
   endIndex: number;
   /** Whether correction was applied */
   wasCorrected: boolean;
+  /** Normalized input text for debugging */
+  normalizedInput?: string;
+  /** Expected normalized text when validation fails */
+  expectedNormalized?: string;
 }
 
 /**
@@ -53,8 +55,6 @@ export interface QuoteAnalysis {
 export interface LLMProcessorOptions {
   /** Auto-correct misquoted verses (default: true) */
   autoCorrect?: boolean;
-  /** Minimum confidence to consider a fuzzy match valid (default: 0.85) */
-  minConfidence?: number;
   /** Include untagged Arabic text in scan (default: true) */
   scanUntagged?: boolean;
   /** Tag format to look for (default: 'xml') */
@@ -139,7 +139,8 @@ const TAG_PATTERNS = {
   markdown: /```quran\s+ref=["'](\d+:\d+(?:-\d+)?)["']\n([\s\S]*?)\n```/gi,
   bracket: /\[\[Q:(\d+:\d+(?:-\d+)?)\|([\s\S]*?)\]\]/gi,
   // Also match inline references like "text (1:1)" or "text (1:1-3)"
-  inlineRef: /([\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\s]+)\s*\((\d+:\d+(?:-\d+)?)\)/g,
+  inlineRef:
+    /([\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF][\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\s]*)\s*\((\d+:\d+(?:-\d+)?)\)/g,
 };
 
 /**
@@ -200,7 +201,6 @@ export class LLMProcessor {
     this.validator = new QuranValidator();
     this.options = {
       autoCorrect: options.autoCorrect ?? true,
-      minConfidence: options.minConfidence ?? 0.85,
       scanUntagged: options.scanUntagged ?? true,
       tagFormat: options.tagFormat ?? 'xml',
     };
@@ -256,7 +256,7 @@ export class LLMProcessor {
         'contextual'
       );
 
-      if (analysis.isValid || analysis.confidence >= this.options.minConfidence) {
+      if (analysis.isValid) {
         quotes.push(analysis);
 
         if (this.options.autoCorrect && analysis.wasCorrected) {
@@ -269,7 +269,7 @@ export class LLMProcessor {
       }
     }
 
-    // Step 3: Scan for untagged Arabic that might be Quran (fuzzy)
+    // Step 3: Scan for untagged Arabic that might be Quran
     if (this.options.scanUntagged) {
       const untaggedQuotes = this.scanUntaggedArabic(text, quotes);
       for (const untagged of untaggedQuotes) {
@@ -281,11 +281,12 @@ export class LLMProcessor {
           'fuzzy'
         );
 
-        if (analysis.confidence >= this.options.minConfidence) {
+        // Only include if it's a valid exact or normalized match
+        if (analysis.isValid) {
           quotes.push(analysis);
           warnings.push(
-            `Potential untagged Quran quote detected: "${untagged.text.slice(0, 50)}..." ` +
-              `(possibly ${analysis.reference}, ${(analysis.confidence * 100).toFixed(0)}% confidence)`
+            `Untagged Quran quote detected: "${untagged.text.slice(0, 50)}..." ` +
+              `(${analysis.reference})`
           );
 
           if (this.options.autoCorrect && analysis.wasCorrected) {
@@ -380,8 +381,12 @@ export class LLMProcessor {
         (r) => match!.index >= r.startIndex && match!.index < r.endIndex
       );
       if (!overlaps) {
+        const inlineText = match[1].trim();
+        if (!inlineText) {
+          continue;
+        }
         results.push({
-          text: match[1].trim(),
+          text: inlineText,
           reference: match[2],
           startIndex: match.index,
           endIndex: match.index + match[0].length,
@@ -479,6 +484,8 @@ export class LLMProcessor {
     endIndex: number,
     detectionMethod: 'tagged' | 'contextual' | 'fuzzy'
   ): QuoteAnalysis {
+    const normalizedInput = normalizeArabic(text);
+
     // Check if this is a verse range reference
     if (expectedRef) {
       const parsed = parseReference(expectedRef);
@@ -492,22 +499,112 @@ export class LLMProcessor {
           detectionMethod
         );
       }
+
+      // Single verse with expected reference - validate against that specific verse
+      if (parsed) {
+        const expectedVerse = this.validator.getVerse(parsed.surah, parsed.startAyah);
+
+        if (expectedVerse) {
+          const normalizedExpected = normalizeArabic(expectedVerse.text);
+          const isExact = text.trim() === expectedVerse.text;
+          const isNormalizedMatch = normalizedInput === normalizedExpected;
+
+          if (isExact) {
+            return {
+              original: text,
+              corrected: text,
+              isValid: true,
+              reference: expectedRef,
+              detectionMethod,
+              startIndex,
+              endIndex,
+              wasCorrected: false,
+              normalizedInput,
+            };
+          }
+
+          if (isNormalizedMatch) {
+            return {
+              original: text,
+              corrected: expectedVerse.text,
+              isValid: true,
+              reference: expectedRef,
+              detectionMethod,
+              startIndex,
+              endIndex,
+              wasCorrected: true,
+              normalizedInput,
+            };
+          }
+
+          // Text doesn't match cited verse - check if it's real Quran from a different verse
+          const globalValidation = this.validator.validate(text);
+          if (globalValidation.isValid && globalValidation.reference) {
+            return {
+              original: text,
+              corrected: globalValidation.matchedVerse?.text || text,
+              isValid: true,
+              reference: globalValidation.reference,
+              detectionMethod,
+              startIndex,
+              endIndex,
+              wasCorrected: true,
+              normalizedInput,
+            };
+          }
+
+          // Text doesn't match cited verse AND doesn't exist elsewhere - invalid
+          return {
+            original: text,
+            corrected: text,
+            isValid: false,
+            reference: expectedRef,
+            detectionMethod,
+            startIndex,
+            endIndex,
+            wasCorrected: false,
+            normalizedInput,
+            expectedNormalized: normalizedExpected,
+          };
+        }
+
+        // Expected reference points to non-existent verse - search globally
+        const globalValidation = this.validator.validate(text);
+        if (globalValidation.isValid && globalValidation.reference) {
+          return {
+            original: text,
+            corrected: globalValidation.matchedVerse?.text || text,
+            isValid: true,
+            reference: globalValidation.reference,
+            detectionMethod,
+            startIndex,
+            endIndex,
+            wasCorrected: true,
+            normalizedInput,
+          };
+        }
+
+        return {
+          original: text,
+          corrected: text,
+          isValid: false,
+          reference: expectedRef,
+          detectionMethod,
+          startIndex,
+          endIndex,
+          wasCorrected: false,
+          normalizedInput,
+        };
+      }
     }
 
-    // Single verse validation
+    // No expected reference - search the entire Quran for a match
     const validation = this.validator.validate(text);
 
     let isValid = validation.isValid;
     let wasCorrected = false;
     let corrected = text;
 
-    // Check reference if provided
-    if (expectedRef && validation.reference && validation.reference !== expectedRef) {
-      // Reference mismatch - this might be an error
-      isValid = false;
-    }
-
-    // Determine if correction is needed
     if (
       validation.isValid &&
       validation.matchType !== 'exact' &&
@@ -521,12 +618,12 @@ export class LLMProcessor {
       original: text,
       corrected,
       isValid,
-      reference: validation.reference || expectedRef,
-      confidence: validation.confidence,
+      reference: validation.reference,
       detectionMethod,
       startIndex,
       endIndex,
       wasCorrected,
+      normalizedInput,
     };
   }
 
@@ -542,57 +639,69 @@ export class LLMProcessor {
     detectionMethod: 'tagged' | 'contextual' | 'fuzzy'
   ): QuoteAnalysis {
     const { surah, startAyah, endAyah } = parsed;
+    const normalizedInput = normalizeArabic(text);
 
     // Get the verse range from validator
     const range = this.validator.getVerseRange(surah, startAyah, endAyah!);
 
     if (!range) {
-      // Invalid range - verses don't exist
       return {
         original: text,
         corrected: text,
         isValid: false,
         reference: expectedRef,
-        confidence: 0,
         detectionMethod,
         startIndex,
         endIndex,
         wasCorrected: false,
+        normalizedInput,
       };
     }
 
-    // Compare the quoted text against the concatenated verse range
-    const normalizedInput = normalizeArabic(text);
     const normalizedRange = normalizeArabic(range.text);
-
-    // Calculate similarity
-    const similarity = calculateSimilarity(normalizedInput, normalizedRange);
-
-    // Check for exact match
     const isExact = text.trim() === range.text;
     const isNormalizedMatch = normalizedInput === normalizedRange;
 
-    let isValid = isExact || isNormalizedMatch || similarity >= 0.85;
-    let wasCorrected = false;
-    let corrected = text;
-    let confidence = isExact ? 1.0 : isNormalizedMatch ? 0.95 : similarity;
-
-    // Auto-correct if needed
-    if (isValid && !isExact) {
-      corrected = range.text;
-      wasCorrected = true;
+    if (isExact) {
+      return {
+        original: text,
+        corrected: text,
+        isValid: true,
+        reference: expectedRef,
+        detectionMethod,
+        startIndex,
+        endIndex,
+        wasCorrected: false,
+        normalizedInput,
+      };
     }
 
+    if (isNormalizedMatch) {
+      return {
+        original: text,
+        corrected: range.text,
+        isValid: true,
+        reference: expectedRef,
+        detectionMethod,
+        startIndex,
+        endIndex,
+        wasCorrected: true,
+        normalizedInput,
+      };
+    }
+
+    // No match - include expected for diff
     return {
       original: text,
-      corrected,
-      isValid,
+      corrected: text,
+      isValid: false,
       reference: expectedRef,
-      confidence,
       detectionMethod,
       startIndex,
       endIndex,
-      wasCorrected,
+      wasCorrected: false,
+      normalizedInput,
+      expectedNormalized: normalizedRange,
     };
   }
 

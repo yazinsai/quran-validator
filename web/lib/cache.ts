@@ -1,11 +1,14 @@
 import fs from 'fs';
 import path from 'path';
 
-const CACHE_DIR = process.env.CACHE_DIR || process.cwd();
+const cwd = process.cwd();
+const repoWebCache = path.join(cwd, 'web', 'cache.json');
+const defaultCacheDir = fs.existsSync(repoWebCache) ? path.join(cwd, 'web') : cwd;
+const CACHE_DIR = process.env.CACHE_DIR || defaultCacheDir;
 const CACHE_FILE = path.join(CACHE_DIR, 'cache.json');
 
 export type InvalidReason =
-  | 'fabricated'           // No match anywhere in Quran (confidence < 0.4)
+  | 'fabricated'           // No match anywhere in Quran
   | 'hallucinated_words'   // Partial match - some words don't exist
   | 'wrong_reference'      // Text is valid Quran but from different verse than claimed
   | 'invalid_reference'    // Cited surah:ayah that doesn't exist
@@ -19,11 +22,14 @@ export interface CachedQuote {
   reference: string;
   expectedReference?: string;  // For specific prompts where we know what to expect
   isValid: boolean;
-  confidence: number;
   original: string;
   corrected?: string;
   invalidReason?: InvalidReason;
-  promptType?: PromptType;  // Optional for backwards compatibility with old cache
+  promptType?: PromptType;
+  /** Normalized input text for diff display */
+  normalizedInput?: string;
+  /** Expected normalized text when validation fails */
+  expectedNormalized?: string;
 }
 
 export interface PromptResult {

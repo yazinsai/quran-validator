@@ -133,9 +133,15 @@ function QuoteDetail({ quote }: { quote: CachedResult['quotes'][0] }) {
         )}
       </div>
 
-      <p className="font-arabic text-xl text-charcoal text-right" dir="rtl">
-        {quote.original}
-      </p>
+      {quote.original ? (
+        <p className="font-arabic text-xl text-charcoal text-right" dir="rtl">
+          {quote.original}
+        </p>
+      ) : (
+        <p className="text-sm text-red-400 italic">
+          (No text captured - possible parsing error)
+        </p>
+      )}
 
       {quote.corrected && (
         <div className="mt-4 pt-4 border-t border-red-200/50">
@@ -155,6 +161,7 @@ function PromptResultSection({ result }: { result: PromptResult }) {
   const promptInfo = getPromptTypeLabel(result.promptType);
   const [showResponse, setShowResponse] = useState(false);
   const hasNoQuotes = result.quotes.length === 0;
+  const showResponseToggle = hasNoQuotes || result.noArabicContent;
 
   return (
     <div className="space-y-3">
@@ -178,10 +185,10 @@ function PromptResultSection({ result }: { result: PromptResult }) {
         <QuoteDetail key={i} quote={quote} />
       ))}
 
-      {/* Show raw response toggle - especially useful when no quotes */}
+      {/* Show raw response toggle - especially useful when no quotes or no Arabic */}
       {result.rawResponse && (
         <div className="pl-6">
-          {hasNoQuotes && !showResponse ? (
+          {showResponseToggle && !showResponse ? (
             <button
               onClick={() => setShowResponse(true)}
               className="text-xs text-sage hover:text-sage-dark flex items-center gap-1"
@@ -189,7 +196,7 @@ function PromptResultSection({ result }: { result: PromptResult }) {
               <Icon icon="solar:eye-linear" className="w-3.5 h-3.5" />
               Show model response
             </button>
-          ) : hasNoQuotes || showResponse ? (
+          ) : showResponseToggle || showResponse ? (
             <div className="space-y-2">
               <button
                 onClick={() => setShowResponse(false)}
@@ -464,25 +471,21 @@ function LeaderboardSection({
   onHighlightClear: () => void;
 }) {
   const [search, setSearch] = useState('');
-  const [expanded, setExpanded] = useState(false);
   const [page, setPage] = useState(1);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const PAGE_SIZE = 100;
 
-  // Top 3 results
-  const top3 = leaderboard.slice(0, 3);
-  const rest = leaderboard.slice(3);
+  // Show all results up to current page * PAGE_SIZE
+  const displayedResults = leaderboard.slice(0, page * PAGE_SIZE);
+  const hasMore = leaderboard.length > page * PAGE_SIZE;
+  const remainingCount = leaderboard.length - page * PAGE_SIZE;
 
-  // Paginated rest results when expanded
-  const totalPages = Math.ceil(rest.length / PAGE_SIZE);
-  const paginatedRest = expanded ? rest.slice(0, page * PAGE_SIZE) : [];
-
-  // Search result (if searching and result not in top 3)
+  // Search result (if searching and not in displayed results)
   const searchResult = search.trim()
     ? leaderboard.find(
         (r, idx) =>
-          idx >= 3 &&
+          idx >= page * PAGE_SIZE &&
           (r.modelName.toLowerCase().includes(search.toLowerCase()) ||
             r.modelId.toLowerCase().includes(search.toLowerCase()))
       )
@@ -547,8 +550,8 @@ function LeaderboardSection({
         </div>
       ) : (
         <div className="space-y-2">
-          {/* Top 3 */}
-          {top3.map((result, index) => (
+          {/* All displayed results */}
+          {displayedResults.map((result, index) => (
             <ResultCard
               key={result.modelId}
               result={result}
@@ -558,7 +561,7 @@ function LeaderboardSection({
             />
           ))}
 
-          {/* Search result divider + card */}
+          {/* Search result divider + card (if result is beyond current page) */}
           {searchResult && searchResultRank && (
             <>
               <div className="flex items-center gap-3 py-2">
@@ -578,66 +581,23 @@ function LeaderboardSection({
           )}
 
           {/* No search result message */}
-          {search.trim() && !searchResult && leaderboard.length > 3 && (
+          {search.trim() && !searchResult && hasMore && (
             <div className="flex items-center gap-3 py-2">
               <div className="flex-1 h-px bg-sand" />
               <span className="text-xs text-charcoal-muted">
-                No match outside top 3
+                No match in remaining results
               </span>
               <div className="flex-1 h-px bg-sand" />
             </div>
           )}
 
-          {/* Expanded results */}
-          {!search.trim() && expanded && paginatedRest.length > 0 && (
-            <>
-              <div className="flex items-center gap-3 py-2">
-                <div className="flex-1 h-px bg-sand" />
-                <span className="text-xs text-charcoal-muted">
-                  All results
-                </span>
-                <div className="flex-1 h-px bg-sand" />
-              </div>
-              {paginatedRest.map((result, index) => (
-                <ResultCard
-                  key={result.modelId}
-                  result={result}
-                  rank={index + 4}
-                  isHighlighted={highlightedModelId === result.modelId}
-                  onHighlightClear={onHighlightClear}
-                />
-              ))}
-              {/* Load more / pagination */}
-              {page * PAGE_SIZE < rest.length && (
-                <button
-                  onClick={() => setPage(p => p + 1)}
-                  className="w-full py-3 text-sm text-sage hover:text-sage-dark font-medium transition-colors"
-                >
-                  Load more ({rest.length - page * PAGE_SIZE} remaining)
-                </button>
-              )}
-            </>
-          )}
-
-          {/* Click to expand if more than 3 and not searching */}
-          {!search.trim() && !expanded && rest.length > 0 && (
+          {/* Load more pagination */}
+          {!search.trim() && hasMore && (
             <button
-              onClick={() => setExpanded(true)}
-              className="w-full py-3 text-sm text-charcoal-muted hover:text-charcoal transition-colors flex items-center justify-center gap-2"
+              onClick={() => setPage(p => p + 1)}
+              className="w-full py-3 text-sm text-sage hover:text-sage-dark font-medium transition-colors"
             >
-              <Icon icon="solar:alt-arrow-down-linear" className="w-4 h-4" />
-              Show all ({rest.length} more)
-            </button>
-          )}
-
-          {/* Collapse button when expanded */}
-          {!search.trim() && expanded && rest.length > 0 && (
-            <button
-              onClick={() => { setExpanded(false); setPage(1); }}
-              className="w-full py-3 text-sm text-charcoal-muted hover:text-charcoal transition-colors flex items-center justify-center gap-2"
-            >
-              <Icon icon="solar:alt-arrow-up-linear" className="w-4 h-4" />
-              Collapse
+              Load more ({remainingCount} remaining)
             </button>
           )}
         </div>

@@ -40,8 +40,6 @@ export interface QuranSurah {
 export type MatchType =
   | 'exact'      // Perfect character-by-character match with diacritics
   | 'normalized' // Match after removing diacritics
-  | 'partial'    // Input is part of a verse or verse is part of input
-  | 'fuzzy'      // Similar but not exact match
   | 'none';      // No match found
 
 /**
@@ -52,25 +50,19 @@ export interface ValidationResult {
   isValid: boolean;
   /** Type of match found */
   matchType: MatchType;
-  /** Confidence score (0-1), higher is better */
-  confidence: number;
   /** The matched verse (if found) */
   matchedVerse?: QuranVerse;
   /** Reference string like "2:255" */
   reference?: string;
-  /** Specific differences between input and matched verse (for corrections) */
-  differences?: {
-    /** What was provided */
-    input: string;
-    /** What it should be */
-    correct: string;
-    /** Position in text where difference starts */
-    position: number;
-  }[];
+  /** The normalized (stripped) input text that was checked */
+  normalizedInput?: string;
+  /** The expected normalized verse text (for comparison when invalid) */
+  expectedNormalized?: string;
+  /** Character index where the mismatch starts (-1 if no mismatch or different lengths) */
+  mismatchIndex?: number;
   /** Suggestions if multiple possible matches exist */
   suggestions?: {
     verse: QuranVerse;
-    confidence: number;
     reference: string;
   }[];
 }
@@ -98,12 +90,8 @@ export interface DetectionResult {
  * Options for the validator
  */
 export interface ValidatorOptions {
-  /** Minimum confidence threshold for fuzzy matches (default: 0.8) */
-  fuzzyThreshold?: number;
   /** Maximum number of suggestions to return (default: 3) */
   maxSuggestions?: number;
-  /** Whether to include partial matches (default: true) */
-  includePartial?: boolean;
   /** Minimum text length to consider for detection (default: 10) */
   minDetectionLength?: number;
 }
@@ -126,4 +114,12 @@ export interface NormalizationOptions {
   normalizeHamza?: boolean;
   /** Normalize whitespace (default: true) */
   normalizeWhitespace?: boolean;
+  /** Normalize Arabic presentation forms/ligatures via NFKC (default: true) */
+  normalizePresentationForms?: boolean;
+  /** Map Arabic-Indic and Eastern Arabic digits to ASCII (default: true) */
+  normalizeDigits?: boolean;
+  /** Strip bidi/zero-width control characters (default: true) */
+  stripBidiControls?: boolean;
+  /** Apply Uthmani-specific heuristics (default: true) */
+  applyUthmaniHeuristics?: boolean;
 }

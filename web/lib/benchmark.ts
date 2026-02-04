@@ -30,11 +30,24 @@ When asked about Quranic topics, provide relevant verses with their exact Arabic
 const validator = new QuranValidator();
 
 function isValidReference(ref: string): boolean {
-  const match = ref.match(/^(\d+):(\d+)$/);
-  if (!match) return false;
-  const surah = parseInt(match[1], 10);
-  const ayah = parseInt(match[2], 10);
-  return validator.getVerse(surah, ayah) !== undefined;
+  // Single verse: "2:255"
+  const singleMatch = ref.match(/^(\d+):(\d+)$/);
+  if (singleMatch) {
+    const surah = parseInt(singleMatch[1], 10);
+    const ayah = parseInt(singleMatch[2], 10);
+    return validator.getVerse(surah, ayah) !== undefined;
+  }
+
+  // Verse range: "107:1-7"
+  const rangeMatch = ref.match(/^(\d+):(\d+)-(\d+)$/);
+  if (rangeMatch) {
+    const surah = parseInt(rangeMatch[1], 10);
+    const startAyah = parseInt(rangeMatch[2], 10);
+    const endAyah = parseInt(rangeMatch[3], 10);
+    return validator.getVerseRange(surah, startAyah, endAyah) !== undefined;
+  }
+
+  return false;
 }
 
 function getExpectedVerseText(ref: string): string | null {
@@ -51,46 +64,51 @@ function determineInvalidReason(
     isValid: boolean;
     wasCorrected: boolean;
     corrected: string;
-    confidence: number;
     reference?: string;
+    normalizedInput?: string;
+    expectedNormalized?: string;
   },
   expectedRef?: string
 ): InvalidReason {
-  if (quote.isValid && !quote.wasCorrected) return null;
+  // If the validator says it's valid, trust it
+  if (quote.isValid) {
+    // Check for wrong reference (valid verse, wrong citation)
+    if (expectedRef && quote.reference && quote.reference !== expectedRef) {
+      return 'wrong_reference';
+    }
+    // wasCorrected means diacritics/normalization differences - still valid
+    if (quote.wasCorrected) {
+      return 'diacritics_error';
+    }
+    // Perfect match
+    return null;
+  }
 
-  // Check if cited reference doesn't exist
-  if (quote.reference && !isValidReference(quote.reference)) {
+  // isValid: false - text doesn't match the cited verse
+  // Check if cited reference doesn't exist at all
+  if (quote.reference && quote.reference !== 'unknown' && !isValidReference(quote.reference)) {
     return 'invalid_reference';
   }
 
-  // Check if text is from a different verse than claimed
-  if (expectedRef && quote.reference && quote.reference !== expectedRef) {
-    // The text might be valid Quran, just not the verse they claimed
-    if (quote.isValid || quote.confidence > 0.8) {
-      return 'wrong_reference';
+  const normalizedInput = quote.normalizedInput?.trim();
+  const expectedNormalized = quote.expectedNormalized?.trim();
+
+  if (normalizedInput && expectedNormalized) {
+    if (expectedNormalized.includes(normalizedInput) && normalizedInput.length < expectedNormalized.length) {
+      return 'truncated';
+    }
+
+    const inputWords = normalizedInput.split(/\s+/);
+    const expectedWords = new Set(expectedNormalized.split(/\s+/));
+    const overlapCount = inputWords.filter((w) => expectedWords.has(w)).length;
+    const overlapRatio = inputWords.length > 0 ? overlapCount / inputWords.length : 0;
+
+    if (inputWords.length >= 4 && overlapRatio >= 0.6) {
+      return 'hallucinated_words';
     }
   }
 
-  // If there's a corrected version with high confidence, it's likely diacritics
-  if (quote.wasCorrected && quote.corrected && quote.confidence >= 0.9) {
-    return 'diacritics_error';
-  }
-
-  // Partial match with decent confidence = some words are real
-  if (quote.confidence >= 0.5 && quote.confidence < 0.85) {
-    return 'hallucinated_words';
-  }
-
-  // Very low confidence = likely fabricated
-  if (quote.confidence < 0.5) {
-    return 'fabricated';
-  }
-
-  // Medium confidence with correction = truncated or partial
-  if (quote.wasCorrected && quote.confidence >= 0.7) {
-    return 'truncated';
-  }
-
+  // Text doesn't match the cited verse - it's fabricated
   return 'fabricated';
 }
 
@@ -146,15 +164,31 @@ async function runSinglePrompt(
   const processor = new LLMProcessor();
   const validated = processor.process(content);
 
+  // Get the expected verse text if we have an expected reference
+  const expectedVerseText = promptConfig.expectedRef
+    ? getExpectedVerseText(promptConfig.expectedRef)
+    : null;
+
   const quotes: CachedQuote[] = validated.quotes.map((q) => ({
     reference: q.reference || 'unknown',
     expectedReference: promptConfig.expectedRef,
     isValid: q.isValid,
-    confidence: q.confidence,
     original: q.original,
-    corrected: q.wasCorrected ? q.corrected : undefined,
-    invalidReason: determineInvalidReason(q, promptConfig.expectedRef),
+    // For specific prompts, show the full expected verse; otherwise show validator's correction
+    corrected: promptConfig.expectedRef && expectedVerseText && !q.isValid
+      ? expectedVerseText
+      : (q.wasCorrected ? q.corrected : undefined),
+    invalidReason: determineInvalidReason(
+      {
+        ...q,
+        normalizedInput: q.normalizedInput,
+        expectedNormalized: q.expectedNormalized,
+      },
+      promptConfig.expectedRef
+    ),
     promptType: promptConfig.type,
+    normalizedInput: q.normalizedInput,
+    expectedNormalized: q.expectedNormalized,
   }));
 
   // For specific prompts, check if they quoted the right verse

@@ -10,8 +10,6 @@ import {
   normalizeArabic,
   containsArabic,
   extractArabicSegments,
-  calculateSimilarity,
-  findDifferences,
 } from './normalizer';
 
 // Import bundled data
@@ -22,9 +20,7 @@ import surahsData from '../data/quran-surahs.min.json';
  * Default validator options
  */
 const DEFAULT_OPTIONS: Required<ValidatorOptions> = {
-  fuzzyThreshold: 0.8,
   maxSuggestions: 3,
-  includePartial: true,
   minDetectionLength: 10,
 };
 
@@ -98,29 +94,26 @@ export class QuranValidator {
    */
   validate(text: string): ValidationResult {
     const trimmedText = text.trim();
+    const normalizedInput = normalizeArabic(trimmedText);
 
     // Early exit if not Arabic
     if (!containsArabic(trimmedText)) {
-      return this.noMatch();
+      return this.noMatch(normalizedInput);
     }
 
     // Step 1: Try exact match (with diacritics)
     const exactMatch = this.findExactMatch(trimmedText);
     if (exactMatch) {
-      return this.createResult(exactMatch, 'exact', 1.0);
+      return this.createResult(exactMatch, 'exact', normalizedInput);
     }
 
     // Step 2: Try normalized match (without diacritics)
-    const normalizedInput = normalizeArabic(trimmedText);
     const normalizedMatches = this.normalizedVerseMap.get(normalizedInput);
 
     if (normalizedMatches && normalizedMatches.length > 0) {
       // Return first match with suggestions if multiple
       const primary = normalizedMatches[0];
-      const result = this.createResult(primary, 'normalized', 0.95);
-
-      // Add differences for correction
-      result.differences = findDifferences(trimmedText, primary.text);
+      const result = this.createResult(primary, 'normalized', normalizedInput);
 
       // Add suggestions if multiple matches
       if (normalizedMatches.length > 1) {
@@ -128,7 +121,6 @@ export class QuranValidator {
           .slice(0, this.options.maxSuggestions)
           .map((v) => ({
             verse: v,
-            confidence: 0.95,
             reference: `${v.surah}:${v.ayah}`,
           }));
       }
@@ -136,35 +128,99 @@ export class QuranValidator {
       return result;
     }
 
-    // Step 3: Try partial match (substring)
-    if (this.options.includePartial) {
-      const partialMatch = this.findPartialMatch(normalizedInput);
-      if (partialMatch) {
-        const result = this.createResult(
-          partialMatch.verse,
-          'partial',
-          partialMatch.confidence
-        );
-        result.differences = findDifferences(trimmedText, partialMatch.verse.text);
-        return result;
-      }
-    }
-
-    // Step 4: Try fuzzy match
-    const fuzzyMatch = this.findFuzzyMatch(normalizedInput);
-    if (fuzzyMatch && fuzzyMatch.confidence >= this.options.fuzzyThreshold) {
-      const result = this.createResult(
-        fuzzyMatch.verse,
-        'fuzzy',
-        fuzzyMatch.confidence
-      );
-      result.differences = findDifferences(trimmedText, fuzzyMatch.verse.text);
-      result.suggestions = fuzzyMatch.suggestions;
-      return result;
-    }
-
     // No match found
-    return this.noMatch();
+    return this.noMatch(normalizedInput);
+  }
+
+  /**
+   * Validate text against a specific verse reference
+   *
+   * @param text - The Arabic text to validate
+   * @param reference - The expected verse reference (e.g., "1:1" or "2:255-257")
+   * @returns Validation result with diff information
+   *
+   * @example
+   * ```ts
+   * const result = validator.validateAgainst("بسم الله", "1:1");
+   * if (!result.isValid) {
+   *   console.log(`Expected: ${result.expectedNormalized}`);
+   *   console.log(`Got: ${result.normalizedInput}`);
+   *   console.log(`Mismatch at index: ${result.mismatchIndex}`);
+   * }
+   * ```
+   */
+  validateAgainst(text: string, reference: string): ValidationResult {
+    const trimmedText = text.trim();
+    const normalizedInput = normalizeArabic(trimmedText);
+
+    // Parse the reference
+    const rangeMatch = reference.match(/^(\d+):(\d+)(?:-(\d+))?$/);
+    if (!rangeMatch) {
+      return this.noMatch(normalizedInput);
+    }
+
+    const surah = parseInt(rangeMatch[1], 10);
+    const startAyah = parseInt(rangeMatch[2], 10);
+    const endAyah = rangeMatch[3] ? parseInt(rangeMatch[3], 10) : startAyah;
+
+    // Get the expected verse(s)
+    let expectedText: string;
+    let matchedVerse: QuranVerse | undefined;
+
+    if (startAyah === endAyah) {
+      // Single verse
+      matchedVerse = this.getVerse(surah, startAyah);
+      if (!matchedVerse) {
+        return this.noMatch(normalizedInput);
+      }
+      expectedText = matchedVerse.text;
+    } else {
+      // Verse range
+      const range = this.getVerseRange(surah, startAyah, endAyah);
+      if (!range) {
+        return this.noMatch(normalizedInput);
+      }
+      expectedText = range.text;
+      matchedVerse = range.verses[0];
+    }
+
+    const expectedNormalized = normalizeArabic(expectedText);
+
+    // Check for exact match
+    if (trimmedText === expectedText) {
+      return {
+        isValid: true,
+        matchType: 'exact',
+        matchedVerse,
+        reference,
+        normalizedInput,
+        expectedNormalized,
+      };
+    }
+
+    // Check for normalized match
+    if (normalizedInput === expectedNormalized) {
+      return {
+        isValid: true,
+        matchType: 'normalized',
+        matchedVerse,
+        reference,
+        normalizedInput,
+        expectedNormalized,
+      };
+    }
+
+    // No match - find where the mismatch starts
+    const mismatchIndex = this.findMismatchIndex(normalizedInput, expectedNormalized);
+
+    return {
+      isValid: false,
+      matchType: 'none',
+      reference,
+      normalizedInput,
+      expectedNormalized,
+      mismatchIndex,
+    };
   }
 
   /**
@@ -208,9 +264,9 @@ export class QuranValidator {
         validation: this.validate(seg.text),
       }));
 
-    // A detection is positive if we found any Arabic text (even if not Quran)
+    // A detection is positive if we found any valid Quran content
     const detected = validatedSegments.some(
-      (seg) => seg.validation.isValid || seg.validation.matchType === 'fuzzy'
+      (seg) => seg.validation.isValid
     );
 
     return {
@@ -287,28 +343,37 @@ export class QuranValidator {
   }
 
   /**
-   * Search verses by text
+   * Search verses by text (containment-based matching)
    *
    * @param query - Search query (Arabic text)
    * @param limit - Maximum results to return
-   * @returns Matching verses with similarity scores
+   * @returns Matching verses sorted by relevance
    */
   search(
     query: string,
     limit: number = 10
   ): { verse: QuranVerse; similarity: number }[] {
     const normalizedQuery = normalizeArabic(query);
+    const results: { verse: QuranVerse; similarity: number }[] = [];
 
-    const results = this.verses
-      .map((verse) => ({
-        verse,
-        similarity: this.calculateVerseMatch(normalizedQuery, verse),
-      }))
-      .filter((r) => r.similarity > 0.3)
+    for (const verse of this.verses) {
+      const normalizedVerse = normalizeArabic(verse.text);
+
+      // Query contained in verse
+      if (normalizedVerse.includes(normalizedQuery)) {
+        const ratio = normalizedQuery.length / normalizedVerse.length;
+        results.push({ verse, similarity: 0.7 + ratio * 0.3 });
+      }
+      // Verse contained in query
+      else if (normalizedQuery.includes(normalizedVerse)) {
+        const ratio = normalizedVerse.length / normalizedQuery.length;
+        results.push({ verse, similarity: 0.5 + ratio * 0.3 });
+      }
+    }
+
+    return results
       .sort((a, b) => b.similarity - a.similarity)
       .slice(0, limit);
-
-    return results;
   }
 
   // Private helper methods
@@ -317,93 +382,43 @@ export class QuranValidator {
     return this.verses.find((v) => v.text === text);
   }
 
-  private findPartialMatch(
-    normalizedInput: string
-  ): { verse: QuranVerse; confidence: number } | undefined {
-    // Look for verses where input is a substring or vice versa
-    for (const verse of this.verses) {
-      const normalizedVerse = normalizeArabic(verse.text);
-
-      // Input is contained in verse
-      if (normalizedVerse.includes(normalizedInput)) {
-        const ratio = normalizedInput.length / normalizedVerse.length;
-        return { verse, confidence: 0.7 + ratio * 0.2 };
-      }
-
-      // Verse is contained in input
-      if (normalizedInput.includes(normalizedVerse)) {
-        const ratio = normalizedVerse.length / normalizedInput.length;
-        return { verse, confidence: 0.6 + ratio * 0.2 };
-      }
-    }
-
-    return undefined;
-  }
-
-  private findFuzzyMatch(normalizedInput: string): {
-    verse: QuranVerse;
-    confidence: number;
-    suggestions: { verse: QuranVerse; confidence: number; reference: string }[];
-  } | undefined {
-    const matches: { verse: QuranVerse; similarity: number }[] = [];
-
-    for (const verse of this.verses) {
-      const similarity = this.calculateVerseMatch(normalizedInput, verse);
-
-      if (similarity >= this.options.fuzzyThreshold * 0.9) {
-        matches.push({ verse, similarity });
-      }
-    }
-
-    if (matches.length === 0) {
-      return undefined;
-    }
-
-    // Sort by similarity
-    matches.sort((a, b) => b.similarity - a.similarity);
-
-    const best = matches[0];
-    const suggestions = matches.slice(0, this.options.maxSuggestions).map((m) => ({
-      verse: m.verse,
-      confidence: m.similarity,
-      reference: `${m.verse.surah}:${m.verse.ayah}`,
-    }));
-
-    return {
-      verse: best.verse,
-      confidence: best.similarity,
-      suggestions,
-    };
-  }
-
-  private calculateVerseMatch(
-    normalizedInput: string,
-    verse: QuranVerse
-  ): number {
-    const normalizedVerse = normalizeArabic(verse.text);
-    return calculateSimilarity(normalizedInput, normalizedVerse);
-  }
-
   private createResult(
     verse: QuranVerse,
     matchType: MatchType,
-    confidence: number
+    normalizedInput: string
   ): ValidationResult {
     return {
       isValid: true,
       matchType,
-      confidence,
       matchedVerse: verse,
       reference: `${verse.surah}:${verse.ayah}`,
+      normalizedInput,
     };
   }
 
-  private noMatch(): ValidationResult {
+  private noMatch(normalizedInput?: string): ValidationResult {
     return {
       isValid: false,
       matchType: 'none',
-      confidence: 0,
+      normalizedInput,
     };
+  }
+
+  /**
+   * Find the character index where two strings first differ
+   */
+  private findMismatchIndex(str1: string, str2: string): number {
+    const minLen = Math.min(str1.length, str2.length);
+    for (let i = 0; i < minLen; i++) {
+      if (str1[i] !== str2[i]) {
+        return i;
+      }
+    }
+    // If we get here, one string is a prefix of the other
+    if (str1.length !== str2.length) {
+      return minLen;
+    }
+    return -1; // Strings are identical (shouldn't happen if called correctly)
   }
 }
 
@@ -417,7 +432,7 @@ export class QuranValidator {
  * ```ts
  * import { createValidator } from 'quran-validator';
  *
- * const validator = createValidator({ fuzzyThreshold: 0.85 });
+ * const validator = createValidator();
  * ```
  */
 export function createValidator(options?: ValidatorOptions): QuranValidator {

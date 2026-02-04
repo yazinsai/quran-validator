@@ -14,7 +14,6 @@ describe('QuranValidator', () => {
 
       expect(result.isValid).toBe(true);
       expect(['exact', 'normalized']).toContain(result.matchType);
-      expect(result.confidence).toBeGreaterThanOrEqual(0.95);
       expect(result.reference).toBe('1:1');
     });
 
@@ -27,7 +26,6 @@ describe('QuranValidator', () => {
 
       expect(result.isValid).toBe(true);
       expect(result.matchType).toBe('exact');
-      expect(result.confidence).toBe(1.0);
       expect(result.reference).toBe('1:1');
     });
 
@@ -37,7 +35,6 @@ describe('QuranValidator', () => {
 
       expect(result.isValid).toBe(true);
       expect(result.matchType).toBe('normalized');
-      expect(result.confidence).toBeGreaterThanOrEqual(0.9);
       expect(result.reference).toBe('1:1');
     });
 
@@ -52,14 +49,6 @@ describe('QuranValidator', () => {
       expect(result.reference).toBe('2:255');
     });
 
-    it('should return corrections for slight variations', () => {
-      // Common non-Uthmani spelling
-      const result = validator.validate('الله لا إله إلا هو الحي القيوم');
-
-      // Should match with normalized or fuzzy matching
-      expect(result.isValid).toBe(true);
-    });
-
     it('should not match non-Quran Arabic text', () => {
       const result = validator.validate('مرحبا كيف حالك اليوم');
 
@@ -67,13 +56,13 @@ describe('QuranValidator', () => {
       expect(result.matchType).toBe('none');
     });
 
-    it('should handle partial verses', () => {
-      // Just "In the name of Allah"
+    it('should reject partial verses (no fuzzy matching)', () => {
+      // Just "In the name of Allah" - not a complete verse
       const result = validator.validate('بسم الله');
 
-      // Should find partial match
-      expect(result.isValid).toBe(true);
-      expect(result.matchType).toBe('partial');
+      // Should not match - we only accept exact or normalized matches
+      expect(result.isValid).toBe(false);
+      expect(result.matchType).toBe('none');
     });
 
     it('should return no match for empty string', () => {
@@ -220,10 +209,77 @@ describe('QuranValidator', () => {
 
   describe('createValidator()', () => {
     it('should create validator with custom options', () => {
-      const customValidator = createValidator({ fuzzyThreshold: 0.9 });
+      const customValidator = createValidator({ maxSuggestions: 5 });
 
       expect(customValidator).toBeInstanceOf(QuranValidator);
     });
+  });
+});
+
+describe('Uthmani script character normalization', () => {
+  const validator = new QuranValidator();
+
+  it('should match common Arabic يسألونك to Uthmani يَسْـَٔلُونَكَ', () => {
+    // Common Arabic uses alef-hamza: أ (U+0623)
+    // Uthmani uses tatweel + hamza above: ـٔ (U+0640 + U+0654)
+    // These should normalize to the same form
+    const common = 'يسألونك';
+    const uthmani = 'يَسْـَٔلُونَكَ';
+
+    const normalizedCommon = normalizeArabic(common);
+    const normalizedUthmani = normalizeArabic(uthmani);
+
+    expect(normalizedCommon).toBe(normalizedUthmani);
+  });
+
+  it('should match common الصدقات to Uthmani ٱلصَّدَقَـٰتُ', () => {
+    // Uthmani has alef-wasla (ٱ), tatweel with superscript alef (ـٰ)
+    // The superscript alef represents the actual alef in common Arabic spelling
+    const common = 'الصدقات';
+    const uthmani = 'ٱلصَّدَقَـٰتُ';
+
+    const normalizedCommon = normalizeArabic(common);
+    const normalizedUthmani = normalizeArabic(uthmani);
+
+    // Both should normalize to الصدقات
+    expect(normalizedCommon).toBe('الصدقات');
+    expect(normalizedUthmani).toBe('الصدقات');
+    expect(normalizedCommon).toBe(normalizedUthmani);
+  });
+
+  it('should remove rubul-hizb (۞) used in Uthmani text', () => {
+    const withRubul = '۞ إِنَّمَا';
+    const normalized = normalizeArabic(withRubul);
+
+    expect(normalized).not.toContain('۞');
+    expect(normalized).toBe('انما');
+  });
+
+  it('should convert superscript alef (ـٰ) to regular alef in Uthmani', () => {
+    // Superscript alef (U+0670) represents a long 'a' sound that is written
+    // as a regular alef in common Arabic
+    // In Uthmani: الصَّدَقَـٰتُ → In common: الصدقات
+    const uthmani = 'ٱلسَّمَٰوَٰتِ';
+    const normalizedUthmani = normalizeArabic(uthmani);
+
+    // Should convert superscript alef to regular alef
+    expect(normalizedUthmani).toBe('السماوات');
+  });
+
+  it('should not introduce extra alef for hamza above before alef', () => {
+    // Uthmani: hamza above on tatweel before alef (ـٔا) should not become double alef
+    const uthmani = 'ٱلْـَٔاخِرِ';
+    const common = 'الآخر';
+
+    expect(normalizeArabic(uthmani)).toBe(normalizeArabic(common));
+  });
+
+  it('should normalize standalone hamza before alef', () => {
+    // Some sources encode alef-hamza as hamza + alef (ءا)
+    const standalone = 'ٱلْءَاخِرِ';
+    const common = 'الآخر';
+
+    expect(normalizeArabic(standalone)).toBe(normalizeArabic(common));
   });
 });
 
@@ -264,6 +320,32 @@ describe('normalizeArabic', () => {
     const result = normalizeArabic('ٱللَّهُ');
     expect(result).toBe('الله');
   });
+
+  it('should normalize presentation-form ligatures (e.g., Allah sign)', () => {
+    // U+FDF2 ARABIC LIGATURE ALLAH ISOLATED FORM
+    const result = normalizeArabic('ﷲ');
+    expect(result).toBe('الله');
+  });
+
+  it('should normalize Arabic-Indic digits and strip bidi controls in Quran refs', () => {
+    const input = 'سورة ‎١١٢:١ ‎قُلْ هُوَ ٱللَّهُ أَحَدٌ'; // contains RLM (U+200F)
+    const result = normalizeArabic(input);
+
+    // Note: سورة → سوره because teh marbuta (ة) is normalized to heh (ه)
+    expect(result).toContain('سوره 112:1');
+    expect(result).toContain('قل هو الله احد');
+    expect(result).not.toMatch(/[\u200c\u200d\u200e\u200f\u061c]/);
+  });
+
+  it('should allow opting out of Uthmani heuristics when needed', () => {
+    const input = 'الرَّحْمَٰنُ';
+
+    const withHeuristics = normalizeArabic(input);
+    const withoutHeuristics = normalizeArabic(input, { applyUthmaniHeuristics: false });
+
+    expect(withHeuristics).toBe('الرحمن'); // superscript alef becomes regular alef
+    expect(withoutHeuristics).toBe('الرحمٰن'); // preserves superscript alef when heuristics are off
+  });
 });
 
 describe('removeDiacritics', () => {
@@ -284,5 +366,43 @@ describe('containsArabic', () => {
   it('should return false for non-Arabic text', () => {
     expect(containsArabic('Hello world')).toBe(false);
     expect(containsArabic('123')).toBe(false);
+  });
+});
+
+describe('diff highlighting for invalid text', () => {
+  const validator = new QuranValidator();
+
+  it('should show normalized diff when text does not match any verse', () => {
+    // This is fabricated text that doesn't exist in the Quran
+    const result = validator.validate('بسم الله الرحمن');  // Truncated
+
+    expect(result.isValid).toBe(false);
+    // Should include diff info showing what the normalized input was
+    // and what it was compared against (closest verse or expected)
+    expect(result.normalizedInput).toBeDefined();
+    expect(result.normalizedInput).toBe('بسم الله الرحمن');
+  });
+
+  it('should show diff between input and expected verse when reference provided', () => {
+    // Validate against a specific reference - text doesn't match 1:1
+    const result = validator.validateAgainst('بسم الله', '1:1');
+
+    expect(result.isValid).toBe(false);
+    // Should show the normalized input
+    expect(result.normalizedInput).toBeDefined();
+    // Should show what the expected normalized verse text is
+    expect(result.expectedNormalized).toBeDefined();
+    expect(result.expectedNormalized).toBe('بسم الله الرحمن الرحيم');
+  });
+
+  it('should highlight specific mismatch positions', () => {
+    // One word different
+    const result = validator.validateAgainst('بسم الله الكريم الرحيم', '1:1');
+
+    expect(result.isValid).toBe(false);
+    // Should show which part is different
+    expect(result.mismatchIndex).toBeDefined();
+    // The mismatch starts at "الكريم" where it should be "الرحمن"
+    expect(result.mismatchIndex).toBeGreaterThan(0);
   });
 });
