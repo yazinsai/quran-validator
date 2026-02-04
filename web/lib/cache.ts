@@ -4,21 +4,52 @@ import path from 'path';
 const CACHE_DIR = process.env.CACHE_DIR || process.cwd();
 const CACHE_FILE = path.join(CACHE_DIR, 'cache.json');
 
+export type InvalidReason =
+  | 'fabricated'           // No match anywhere in Quran (confidence < 0.4)
+  | 'hallucinated_words'   // Partial match - some words don't exist
+  | 'wrong_reference'      // Text is valid Quran but from different verse than claimed
+  | 'invalid_reference'    // Cited surah:ayah that doesn't exist
+  | 'diacritics_error'     // Correct letters, wrong tashkeel
+  | 'truncated'            // Only part of a verse
+  | null;
+
+export type PromptType = 'topical' | 'specific';
+
+export interface CachedQuote {
+  reference: string;
+  expectedReference?: string;  // For specific prompts where we know what to expect
+  isValid: boolean;
+  confidence: number;
+  original: string;
+  corrected?: string;
+  invalidReason?: InvalidReason;
+  promptType?: PromptType;  // Optional for backwards compatibility with old cache
+}
+
+export interface PromptResult {
+  promptType: PromptType;
+  promptText: string;
+  quotes: CachedQuote[];
+  validCount: number;
+  totalCount: number;
+  accuracy: number;
+  noArabicContent: boolean;  // Model didn't provide any Arabic
+}
+
 export interface CachedResult {
   modelId: string;
   modelName: string;
   icon: string;
   timestamp: number;
-  quotes: {
-    reference: string;
-    isValid: boolean;
-    confidence: number;
-    original: string;
-    corrected?: string;
-  }[];
+  // Legacy flat structure for backwards compatibility
+  quotes: CachedQuote[];
   validCount: number;
   totalCount: number;
   accuracy: number;
+  // New structured results by prompt
+  promptResults?: PromptResult[];
+  // Error breakdown for filtering/analysis
+  errorBreakdown?: Record<string, number>;
 }
 
 interface Cache {
