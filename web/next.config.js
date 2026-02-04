@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Allow importing from parent directory (quran-validator)
+  output: 'standalone',
   transpilePackages: ['quran-validator'],
 };
 

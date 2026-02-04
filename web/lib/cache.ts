@@ -1,7 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 
-const CACHE_FILE = path.join(process.cwd(), 'cache.json');
+const CACHE_DIR = process.env.CACHE_DIR || process.cwd();
+const CACHE_FILE = path.join(CACHE_DIR, 'cache.json');
 
 export interface CachedResult {
   modelId: string;
