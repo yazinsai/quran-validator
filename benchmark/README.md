@@ -67,7 +67,7 @@ const CONFIG = {
 
 ## Example Results
 
-![Summary](results/summary.png)
+![Summary](example.png)
 
 ## License
 
