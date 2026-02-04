@@ -115,7 +115,6 @@ async function runSinglePrompt(
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: promptConfig.prompt },
       ],
-      max_tokens: 1000,
     }),
   });
 
