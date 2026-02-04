@@ -2,7 +2,7 @@
 
 Validate and verify Quranic verses in LLM-generated text with high accuracy.
 
-[![npm version](https://badge.fury.io/js/quran-validator.svg)](https://www.npmjs.com/package/quran-validator)
+[![npm package](https://img.shields.io/npm/v/quran-validator.svg)](https://www.npmjs.com/package/quran-validator)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## The Problem
