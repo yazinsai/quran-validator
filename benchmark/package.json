@@ -1,0 +1,17 @@
+{
+  "name": "quran-validator-benchmark",
+  "version": "1.0.0",
+  "description": "Benchmark LLMs on Quranic verse accuracy",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "benchmark": "tsx benchmark.ts",
+    "screenshot": "tsx screenshot.ts",
+    "setup": "npm install && npx playwright install chromium"
+  },
+  "dependencies": {
+    "playwright": "^1.40.0",
+    "tsx": "^4.7.0",
+    "quran-validator": "file:.."
+  }
+}

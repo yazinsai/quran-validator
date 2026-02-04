@@ -1,0 +1,6 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Results (regenerate with `npm run benchmark`)
+results/
