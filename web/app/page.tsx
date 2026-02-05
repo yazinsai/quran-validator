@@ -475,26 +475,29 @@ function LeaderboardSection({
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const PAGE_SIZE = 100;
+  const searchTerm = search.trim().toLowerCase();
 
-  // Show all results up to current page * PAGE_SIZE
-  const displayedResults = leaderboard.slice(0, page * PAGE_SIZE);
-  const hasMore = leaderboard.length > page * PAGE_SIZE;
+  // When searching, filter the full leaderboard; otherwise paginate
+  const filteredResults = searchTerm
+    ? leaderboard
+        .map((r, idx) => ({ result: r, rank: idx + 1 }))
+        .filter(
+          ({ result: r }) =>
+            r.modelName.toLowerCase().includes(searchTerm) ||
+            r.modelId.toLowerCase().includes(searchTerm)
+        )
+    : null;
+
+  const displayedResults = filteredResults
+    ? filteredResults.map(({ result }) => result)
+    : leaderboard.slice(0, page * PAGE_SIZE);
+
+  const displayedRanks = filteredResults
+    ? filteredResults.map(({ rank }) => rank)
+    : null;
+
+  const hasMore = !searchTerm && leaderboard.length > page * PAGE_SIZE;
   const remainingCount = leaderboard.length - page * PAGE_SIZE;
-
-  // Search result (if searching and not in displayed results)
-  const searchResult = search.trim()
-    ? leaderboard.find(
-        (r, idx) =>
-          idx >= page * PAGE_SIZE &&
-          (r.modelName.toLowerCase().includes(search.toLowerCase()) ||
-            r.modelId.toLowerCase().includes(search.toLowerCase()))
-      )
-    : null;
-
-  // Get rank of search result
-  const searchResultRank = searchResult
-    ? leaderboard.findIndex((r) => r.modelId === searchResult.modelId) + 1
-    : null;
 
   return (
     <section className="mb-8">
@@ -555,44 +558,21 @@ function LeaderboardSection({
             <ResultCard
               key={result.modelId}
               result={result}
-              rank={index + 1}
+              rank={displayedRanks ? displayedRanks[index] : index + 1}
               isHighlighted={highlightedModelId === result.modelId}
               onHighlightClear={onHighlightClear}
             />
           ))}
 
-          {/* Search result divider + card (if result is beyond current page) */}
-          {searchResult && searchResultRank && (
-            <>
-              <div className="flex items-center gap-3 py-2">
-                <div className="flex-1 h-px bg-sand" />
-                <span className="text-xs text-charcoal-muted">
-                  Search result
-                </span>
-                <div className="flex-1 h-px bg-sand" />
-              </div>
-              <ResultCard
-                result={searchResult}
-                rank={searchResultRank}
-                isHighlighted={highlightedModelId === searchResult.modelId}
-                onHighlightClear={onHighlightClear}
-              />
-            </>
-          )}
-
-          {/* No search result message */}
-          {search.trim() && !searchResult && hasMore && (
-            <div className="flex items-center gap-3 py-2">
-              <div className="flex-1 h-px bg-sand" />
-              <span className="text-xs text-charcoal-muted">
-                No match in remaining results
-              </span>
-              <div className="flex-1 h-px bg-sand" />
+          {/* No search results message */}
+          {searchTerm && displayedResults.length === 0 && (
+            <div className="text-center py-8 text-charcoal-muted text-sm">
+              No models matching &ldquo;{search.trim()}&rdquo;
             </div>
           )}
 
           {/* Load more pagination */}
-          {!search.trim() && hasMore && (
+          {hasMore && (
             <button
               onClick={() => setPage(p => p + 1)}
               className="w-full py-3 text-sm text-sage hover:text-sage-dark font-medium transition-colors"
