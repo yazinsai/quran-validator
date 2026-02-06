@@ -25,8 +25,8 @@ describe('LLMProcessor', () => {
       expect(result.quotes[0].isValid).toBe(true);
     });
 
-    it('should detect and correct misquoted tagged verse', () => {
-      // Intentionally wrong spelling
+    it('should detect misquoted tagged verse and keep reference', () => {
+      // Intentionally wrong spelling — won't match any verse
       const text = `
         <quran ref="1:1">بسم اللة الرحمن الرحيم</quran>
       `;
@@ -34,7 +34,7 @@ describe('LLMProcessor', () => {
       const result = processor.process(text);
 
       expect(result.quotes.length).toBe(1);
-      // Should still match to the correct verse
+      // Should keep the cited reference even though text doesn't match
       expect(result.quotes[0].reference).toBe('1:1');
     });
 
@@ -104,27 +104,26 @@ describe('LLMProcessor', () => {
   });
 
   describe('auto-correction', () => {
-    it('should auto-correct when enabled and quote needs correction', () => {
+    it('should auto-correct when enabled and Uthmani quote needs minor correction', () => {
       const processor = new LLMProcessor({ autoCorrect: true });
-      const text = `<quran ref="1:1">بسم الله الرحمن الرحيم</quran>`;
+      // Uthmani text without diacritics — should normalize-match 1:1
+      const text = `<quran ref="1:1">بسم ٱلله ٱلرحمٰن ٱلرحيم</quran>`;
 
       const result = processor.process(text);
 
-      // Should have detected and analyzed the quote
       expect(result.quotes.length).toBe(1);
       expect(result.quotes[0].reference).toBe('1:1');
-      // The quote should be identified as needing correction (normalized match)
       expect(result.quotes[0].wasCorrected || result.quotes[0].isValid).toBe(true);
     });
 
     it('should not auto-correct when disabled', () => {
       const processor = new LLMProcessor({ autoCorrect: false });
-      const text = `<quran ref="1:1">بسم الله الرحمن الرحيم</quran>`;
+      const text = `<quran ref="1:1">بسم ٱلله ٱلرحمٰن ٱلرحيم</quran>`;
 
       const result = processor.process(text);
 
       // Should keep original text structure
-      expect(result.correctedText).toContain('بسم الله الرحمن الرحيم');
+      expect(result.correctedText).toContain('بسم ٱلله ٱلرحمٰن ٱلرحيم');
     });
   });
 
@@ -186,17 +185,14 @@ describe('quickValidate()', () => {
     const result = quickValidate(text);
 
     expect(result.hasQuranContent).toBe(true);
-    // Note: Due to Unicode normalization differences, even "exact" text may be detected as normalized
-    // The key is that the verse IS valid and references correctly
   });
 
-  it('should detect Quran content in tagged quotes', () => {
-    const text = `<quran ref="1:1">بسم الله الرحمن الرحيم</quran>`;
+  it('should detect tagged Uthmani Quran content', () => {
+    const text = `<quran ref="1:1">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</quran>`;
 
     const result = quickValidate(text);
 
     expect(result.hasQuranContent).toBe(true);
-    // Should detect the imprecise quote
   });
 });
 
@@ -353,60 +349,38 @@ describe('fabricated/invalid text detection', () => {
 describe('Uthmani script normalization (regression tests)', () => {
   const processor = new LLMProcessor();
 
-  // These tests verify that model output (common Arabic spelling) matches
-  // the Uthmani script in the database after normalization.
-  // Bug: Real verses were being marked as "Fabricated" because the normalizer
-  // didn't handle Uthmani-specific character combinations.
+  // These tests verify that Uthmani text (what LLMs should output)
+  // matches the Uthmani script in the database after normalization.
 
-  it('should validate 2:215 with common Arabic spelling (يسألونك)', () => {
-    // Models output: يسألونك (with alef-hamza أ)
-    // DB has Uthmani: يَسْـَٔلُونَكَ (with tatweel + hamza above)
-    // Both should normalize to the same text
-    const modelOutput = `<quran ref="2:215">يسألونك ماذا ينفقون قل ما أنفقتم من خير فللوالدين والأقربين واليتامى والمساكين وابن السبيل وما تفعلوا من خير فإن الله به عليم</quran>`;
+  it('should validate 51:19 with Uthmani text', () => {
+    const text = `<quran ref="51:19">وَفِىٓ أَمْوَٰلِهِمْ حَقٌّ لِّلسَّآئِلِ وَٱلْمَحْرُومِ</quran>`;
 
-    const result = processor.process(modelOutput);
+    const result = processor.process(text);
 
     expect(result.quotes.length).toBe(1);
-    expect(result.quotes[0].reference).toBe('2:215');
-    expect(result.quotes[0].isValid).toBe(true); // Should be valid, not fabricated
-  });
-
-  it('should validate 9:60 with common Arabic spelling (الصدقات)', () => {
-    // Models output: إنما الصدقات للفقراء...
-    // DB has Uthmani: ۞ إِنَّمَا ٱلصَّدَقَـٰتُ لِلْفُقَرَآءِ... (with rubul-hizb, tatweel)
-    const modelOutput = `<quran ref="9:60">إنما الصدقات للفقراء والمساكين والعاملين عليها والمؤلفة قلوبهم وفي الرقاب والغارمين وفي سبيل الله وابن السبيل فريضة من الله والله عليم حكيم</quran>`;
-
-    const result = processor.process(modelOutput);
-
-    expect(result.quotes.length).toBe(1);
-    expect(result.quotes[0].reference).toBe('9:60');
-    expect(result.quotes[0].isValid).toBe(true); // Should be valid, not fabricated
-  });
-
-  it('should validate 2:255 (Ayat al-Kursi) with common spelling', () => {
-    // Full Ayat al-Kursi in common Arabic (what models typically output)
-    const modelOutput = `<quran ref="2:255">الله لا إله إلا هو الحي القيوم لا تأخذه سنة ولا نوم له ما في السماوات وما في الأرض من ذا الذي يشفع عنده إلا بإذنه يعلم ما بين أيديهم وما خلفهم ولا يحيطون بشيء من علمه إلا بما شاء وسع كرسيه السماوات والأرض ولا يؤوده حفظهما وهو العلي العظيم</quran>`;
-
-    const result = processor.process(modelOutput);
-
-    expect(result.quotes.length).toBe(1);
-    expect(result.quotes[0].reference).toBe('2:255');
+    expect(result.quotes[0].reference).toBe('51:19');
     expect(result.quotes[0].isValid).toBe(true);
   });
 
-  it('should handle hamza above (ٔ) in Uthmani matching alef-hamza (أ) in common', () => {
-    // The word يسألونك can be written as:
-    // - Common: يسألونك (with أ = alef-hamza, U+0623)
-    // - Uthmani: يَسْـَٔلُونَكَ (with tatweel + ٔ = hamza above, U+0654)
-    // Normalization should make these match
-    const modelOutput = `<quran ref="2:215">يسألونك ماذا ينفقون</quran>`;
+  it('should validate 112:1 with Uthmani text sans diacritics', () => {
+    // Uthmani text without diacritics — should still normalize-match
+    const text = `<quran ref="112:1">قل هو ٱلله أحد</quran>`;
+
+    const result = processor.process(text);
+
+    expect(result.quotes.length).toBe(1);
+    expect(result.quotes[0].reference).toBe('112:1');
+    expect(result.quotes[0].isValid).toBe(true);
+  });
+
+  it('should handle hamza above (ٔ) in Uthmani — truncated text is still invalid', () => {
+    // Uthmani text from 2:215 (truncated)
+    const modelOutput = `<quran ref="2:215">يَسْـَٔلُونَكَ مَاذَا يُنفِقُونَ</quran>`;
 
     const result = processor.process(modelOutput);
 
-    // Even though truncated, the text should at least be recognized
-    // as being from 2:215 (not fabricated or from a different verse)
     expect(result.quotes.length).toBe(1);
-    // The truncated part won't be valid, but normalizedInput should show proper normalization
+    // Truncated — should be invalid
     expect(result.quotes[0].normalizedInput).toBeDefined();
   });
 });

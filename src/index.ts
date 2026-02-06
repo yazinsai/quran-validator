@@ -55,6 +55,8 @@ export {
   findDifferences,
 } from './normalizer';
 
+export type { NormalizeOptions } from './normalizer';
+
 // Types
 export type {
   QuranVerse,
@@ -63,7 +65,6 @@ export type {
   DetectionResult,
   ValidatorOptions,
   MatchType,
-  NormalizationOptions,
 } from './types';
 
 export type {

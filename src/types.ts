@@ -96,30 +96,3 @@ export interface ValidatorOptions {
   minDetectionLength?: number;
 }
 
-/**
- * Configuration for Arabic text normalization
- */
-export interface NormalizationOptions {
-  /** Remove diacritics/tashkeel (default: true) */
-  removeDiacritics?: boolean;
-  /** Normalize alef variants to plain alef (default: true) */
-  normalizeAlef?: boolean;
-  /** Normalize alef maqsura to ya (default: true) */
-  normalizeAlefMaqsura?: boolean;
-  /** Normalize teh marbuta to heh (default: true) */
-  normalizeTehMarbuta?: boolean;
-  /** Remove tatweel/kashida (default: true) */
-  removeTatweel?: boolean;
-  /** Normalize hamza carriers (default: true) */
-  normalizeHamza?: boolean;
-  /** Normalize whitespace (default: true) */
-  normalizeWhitespace?: boolean;
-  /** Normalize Arabic presentation forms/ligatures via NFKC (default: true) */
-  normalizePresentationForms?: boolean;
-  /** Map Arabic-Indic and Eastern Arabic digits to ASCII (default: true) */
-  normalizeDigits?: boolean;
-  /** Strip bidi/zero-width control characters (default: true) */
-  stripBidiControls?: boolean;
-  /** Apply Uthmani-specific heuristics (default: true) */
-  applyUthmaniHeuristics?: boolean;
-}
