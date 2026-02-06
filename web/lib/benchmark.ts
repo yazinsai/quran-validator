@@ -1,4 +1,4 @@
-import { LLMProcessor, SYSTEM_PROMPTS, QuranValidator } from 'quran-validator';
+import { LLMProcessor, SYSTEM_PROMPTS, QuranValidator, normalizeArabic } from 'quran-validator';
 import {
   getCachedResult,
   setCachedResult,
@@ -94,7 +94,12 @@ function determineInvalidReason(
   const expectedNormalized = quote.expectedNormalized?.trim();
 
   if (normalizedInput && expectedNormalized) {
-    if (expectedNormalized.includes(normalizedInput) && normalizedInput.length < expectedNormalized.length) {
+    // Use aggressive normalization (stripHamza) for truncation check
+    // This handles cases where LLM writes آمن vs Quran's ءامن
+    const aggressiveInput = normalizeArabic(normalizedInput, { stripHamza: true });
+    const aggressiveExpected = normalizeArabic(expectedNormalized, { stripHamza: true });
+
+    if (aggressiveExpected.includes(aggressiveInput) && aggressiveInput.length < aggressiveExpected.length) {
       return 'truncated';
     }
 
@@ -189,6 +194,7 @@ async function runSinglePrompt(
     promptType: promptConfig.type,
     normalizedInput: q.normalizedInput,
     expectedNormalized: q.expectedNormalized,
+    fabricationAnalysis: q.fabricationAnalysis,
   }));
 
   // For specific prompts, check if they quoted the right verse
@@ -262,7 +268,11 @@ export async function runBenchmark(
   const allQuotes = promptResults.flatMap((r) => r.quotes);
   const totalValid = allQuotes.filter((q) => q.isValid).length;
   const totalQuotes = allQuotes.length;
-  const overallAccuracy = totalQuotes > 0 ? Math.round((totalValid / totalQuotes) * 100) : 0;
+
+  // Count prompts that returned no Arabic as failures
+  const noArabicPrompts = promptResults.filter((r) => r.noArabicContent).length;
+  const totalResponses = totalQuotes + noArabicPrompts;
+  const overallAccuracy = totalResponses > 0 ? Math.round((totalValid / totalResponses) * 100) : 0;
 
   // Build error breakdown
   const errorBreakdown: Record<string, number> = {};
@@ -285,7 +295,7 @@ export async function runBenchmark(
     timestamp: Date.now(),
     quotes: allQuotes,
     validCount: totalValid,
-    totalCount: totalQuotes,
+    totalCount: totalResponses,
     accuracy: overallAccuracy,
     promptResults,
     errorBreakdown,
