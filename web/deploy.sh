@@ -19,4 +19,4 @@ fi
 echo "Pushing web/ subdirectory..."
 git push dokku $(git subtree split --prefix web):main --force
 
-echo "✅ Deployed to https://$APP_NAME.whhite.com"
+echo "✅ Deployed to https://quranvalidator.com"
