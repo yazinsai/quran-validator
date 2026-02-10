@@ -1,5 +1,4 @@
 import { LLMProcessor, SYSTEM_PROMPTS, QuranValidator, normalizeArabic } from 'quran-validator';
-import { normalize as normalizeArabicDirect } from 'arabic-text-normalizer';
 import {
   getCachedResult,
   setCachedResult,
@@ -97,8 +96,8 @@ function determineInvalidReason(
   if (normalizedInput && expectedNormalized) {
     // Use aggressive normalization (stripHamza) for truncation check
     // This handles cases where LLM writes آمن vs Quran's ءامن
-    const aggressiveInput = normalizeArabicDirect(normalizedInput, { stripHamza: true });
-    const aggressiveExpected = normalizeArabicDirect(expectedNormalized, { stripHamza: true });
+    const aggressiveInput = normalizeArabic(normalizedInput, { stripHamza: true });
+    const aggressiveExpected = normalizeArabic(expectedNormalized, { stripHamza: true });
 
     if (aggressiveExpected.includes(aggressiveInput) && aggressiveInput.length < aggressiveExpected.length) {
       return 'truncated';
@@ -195,7 +194,7 @@ async function runSinglePrompt(
     promptType: promptConfig.type,
     normalizedInput: q.normalizedInput,
     expectedNormalized: q.expectedNormalized,
-    fabricationAnalysis: (q as any).fabricationAnalysis,
+    fabricationAnalysis: q.fabricationAnalysis,
   }));
 
   // For specific prompts, check if they quoted the right verse
