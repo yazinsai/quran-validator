@@ -30,6 +30,12 @@ export interface CachedQuote {
   normalizedInput?: string;
   /** Expected normalized text when validation fails */
   expectedNormalized?: string;
+  /** Word-level fabrication analysis */
+  fabricationAnalysis?: {
+    normalizedInput: string;
+    words: { word: string; isFabricated: boolean }[];
+    stats: { totalWords: number; fabricatedWords: number; fabricatedRatio: number };
+  };
 }
 
 export interface PromptResult {

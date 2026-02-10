@@ -344,6 +344,37 @@ describe('fabricated/invalid text detection', () => {
     // Should show what was expected
     expect(result.quotes[0].expectedNormalized).toBeDefined();
   });
+
+  it('should include fabrication analysis for invalid quotes', () => {
+    // Text with some real Quranic words and some fabricated words
+    const mixedText = `<quran ref="1:1">بسم الله الفلان البلان</quran>`;
+
+    const result = processor.process(mixedText);
+
+    expect(result.quotes.length).toBe(1);
+    expect(result.quotes[0].isValid).toBe(false);
+    // Should have fabrication analysis
+    expect(result.quotes[0].fabricationAnalysis).toBeDefined();
+    expect(result.quotes[0].fabricationAnalysis!.words.length).toBeGreaterThan(0);
+    // "بسم" and "الله" should be valid
+    expect(result.quotes[0].fabricationAnalysis!.words[0].isFabricated).toBe(false);
+    expect(result.quotes[0].fabricationAnalysis!.words[1].isFabricated).toBe(false);
+    // "الفلان" and "البلان" should be fabricated
+    expect(result.quotes[0].fabricationAnalysis!.words[2].isFabricated).toBe(true);
+    expect(result.quotes[0].fabricationAnalysis!.words[3].isFabricated).toBe(true);
+  });
+
+  it('should not include fabrication analysis for valid quotes', () => {
+    // Valid verse
+    const validText = `<quran ref="112:1">قُلْ هُوَ ٱللَّهُ أَحَدٌ</quran>`;
+
+    const result = processor.process(validText);
+
+    expect(result.quotes.length).toBe(1);
+    expect(result.quotes[0].isValid).toBe(true);
+    // Valid quotes should NOT have fabrication analysis
+    expect(result.quotes[0].fabricationAnalysis).toBeUndefined();
+  });
 });
 
 describe('Uthmani script normalization (regression tests)', () => {

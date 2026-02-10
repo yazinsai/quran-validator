@@ -44,8 +44,8 @@ function getInvalidReasonText(reason: InvalidReason): { label: string; descripti
       };
     case 'hallucinated_words':
       return {
-        label: 'Hallucinated',
-        description: 'Some words are fabricated',
+        label: 'Unverified',
+        description: 'Partial match - could not fully verify',
         color: 'text-orange-600 bg-orange-50',
       };
     case 'wrong_reference':
@@ -122,21 +122,54 @@ function QuoteDetail({ quote }: { quote: CachedResult['quotes'][0] }) {
           </span>
         ) : (
           <div className="text-right">
-            <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium rounded ${invalidInfo?.color || 'text-red-500'}`}>
-              <Icon icon="solar:close-circle-bold" className="w-3.5 h-3.5" />
-              {invalidInfo?.label || 'Invalid'}
-            </span>
-            {invalidInfo?.description && (
-              <p className="text-xs text-charcoal-muted mt-0.5">{invalidInfo.description}</p>
+            {quote.fabricationAnalysis && quote.fabricationAnalysis.stats.fabricatedWords > 0 ? (
+              <>
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium rounded text-red-600 bg-red-50">
+                  <Icon icon="solar:close-circle-bold" className="w-3.5 h-3.5" />
+                  Hallucinated
+                </span>
+                <p className="text-xs text-red-500 mt-0.5">
+                  {quote.fabricationAnalysis.stats.fabricatedWords} word{quote.fabricationAnalysis.stats.fabricatedWords > 1 ? 's' : ''} not in Quran
+                </p>
+              </>
+            ) : (
+              <>
+                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium rounded ${invalidInfo?.color || 'text-red-500'}`}>
+                  <Icon icon="solar:close-circle-bold" className="w-3.5 h-3.5" />
+                  {invalidInfo?.label || 'Invalid'}
+                </span>
+                {invalidInfo?.description && (
+                  <p className="text-xs text-charcoal-muted mt-0.5">{invalidInfo.description}</p>
+                )}
+              </>
             )}
           </div>
         )}
       </div>
 
       {quote.original ? (
-        <p className="font-arabic text-xl text-charcoal text-right" dir="rtl">
-          {quote.original}
-        </p>
+        quote.fabricationAnalysis && quote.fabricationAnalysis.words.length > 0 ? (
+          <p className="font-arabic text-xl text-right leading-relaxed" dir="rtl">
+            {(() => {
+              // Split original text by whitespace to get words with diacritics
+              const originalWords = quote.original.split(/\s+/);
+              const fabWords = quote.fabricationAnalysis!.words;
+              // Map original words using fabrication analysis for highlighting
+              return originalWords.map((word, i) => (
+                <span
+                  key={i}
+                  className={fabWords[i]?.isFabricated ? 'text-red-600 bg-red-100 px-0.5 rounded' : 'text-charcoal'}
+                >
+                  {word}{' '}
+                </span>
+              ));
+            })()}
+          </p>
+        ) : (
+          <p className="font-arabic text-xl text-charcoal text-right" dir="rtl">
+            {quote.original}
+          </p>
+        )
       ) : (
         <p className="text-sm text-red-400 italic">
           (No text captured - possible parsing error)
@@ -160,8 +193,6 @@ function QuoteDetail({ quote }: { quote: CachedResult['quotes'][0] }) {
 function PromptResultSection({ result }: { result: PromptResult }) {
   const promptInfo = getPromptTypeLabel(result.promptType);
   const [showResponse, setShowResponse] = useState(false);
-  const hasNoQuotes = result.quotes.length === 0;
-  const showResponseToggle = hasNoQuotes || result.noArabicContent;
 
   return (
     <div className="space-y-3">
@@ -185,18 +216,18 @@ function PromptResultSection({ result }: { result: PromptResult }) {
         <QuoteDetail key={i} quote={quote} />
       ))}
 
-      {/* Show raw response toggle - especially useful when no quotes or no Arabic */}
-      {result.rawResponse && (
+      {/* Show raw response toggle - always available when there's a response */}
+      {result.rawResponse !== undefined && (
         <div className="pl-6">
-          {showResponseToggle && !showResponse ? (
+          {!showResponse ? (
             <button
               onClick={() => setShowResponse(true)}
               className="text-xs text-sage hover:text-sage-dark flex items-center gap-1"
             >
               <Icon icon="solar:eye-linear" className="w-3.5 h-3.5" />
-              Show model response
+              Show LLM response
             </button>
-          ) : showResponseToggle || showResponse ? (
+          ) : (
             <div className="space-y-2">
               <button
                 onClick={() => setShowResponse(false)}
@@ -206,10 +237,10 @@ function PromptResultSection({ result }: { result: PromptResult }) {
                 Hide response
               </button>
               <div className="p-3 bg-cream rounded-lg text-sm text-charcoal-light whitespace-pre-wrap max-h-48 overflow-y-auto border border-sand">
-                {result.rawResponse}
+                {result.rawResponse || <span className="italic text-charcoal-muted">(empty response)</span>}
               </div>
             </div>
-          ) : null}
+          )}
         </div>
       )}
     </div>
@@ -221,7 +252,7 @@ function ErrorBreakdownBadges({ breakdown }: { breakdown: Record<string, number>
 
   const errorLabels: Record<string, { label: string; color: string }> = {
     fabricated: { label: 'Fabricated', color: 'bg-red-100 text-red-700' },
-    hallucinated_words: { label: 'Hallucinated', color: 'bg-orange-100 text-orange-700' },
+    hallucinated_words: { label: 'Unverified', color: 'bg-orange-100 text-orange-700' },
     wrong_reference: { label: 'Wrong ref', color: 'bg-amber-100 text-amber-700' },
     invalid_reference: { label: 'Bad ref', color: 'bg-red-100 text-red-700' },
     diacritics_error: { label: 'Diacritics', color: 'bg-yellow-100 text-yellow-700' },
@@ -883,17 +914,8 @@ export default function Home() {
           <div className="flex items-start gap-3">
             <Icon icon="solar:chat-square-call-linear" className="w-5 h-5 text-sage flex-shrink-0 mt-0.5" />
             <div className="flex-1">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs uppercase tracking-wide text-charcoal-muted">The test</p>
-                <button
-                  onClick={() => setShowMethodology(true)}
-                  className="text-xs text-charcoal-muted hover:text-charcoal transition-colors flex items-center gap-1"
-                >
-                  <Icon icon="solar:info-circle-linear" className="w-3.5 h-3.5" />
-                  How we test
-                </button>
-              </div>
-              <div className="space-y-2 text-sm text-charcoal">
+              <p className="text-xs uppercase tracking-wide text-charcoal-muted mb-2">The test</p>
+              <div className="space-y-2 text-sm text-charcoal mb-3">
                 <div className="flex items-start gap-2">
                   <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-sage/10 text-sage text-xs font-semibold flex-shrink-0">1</span>
                   <p className="italic">&ldquo;What does the Quran say about giving to the needy?&rdquo;</p>
@@ -903,6 +925,13 @@ export default function Home() {
                   <p className="italic">&ldquo;Please quote Ayat al-Kursi (2:255) in Arabic.&rdquo;</p>
                 </div>
               </div>
+              <button
+                onClick={() => setShowMethodology(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-sage hover:text-sage-dark bg-sage/10 hover:bg-sage/20 rounded-lg transition-colors"
+              >
+                <Icon icon="solar:info-circle-linear" className="w-4 h-4" />
+                How we test
+              </button>
             </div>
           </div>
         </div>
