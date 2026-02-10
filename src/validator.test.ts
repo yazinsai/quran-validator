@@ -359,3 +359,220 @@ describe('diff highlighting for invalid text', () => {
     expect(result.mismatchIndex).toBeGreaterThan(0);
   });
 });
+
+describe('analyzeFabrication()', () => {
+  const validator = new QuranValidator();
+
+  it('should mark all words as valid for a real Quranic sequence', () => {
+    // "بسم الله الرحمان الرحيم" exists contiguously in 1:1
+    const result = validator.analyzeFabrication('بسم الله الرحمان الرحيم');
+
+    expect(result.words.length).toBe(4);
+    expect(result.words.every(w => !w.isFabricated)).toBe(true);
+    expect(result.stats.fabricatedWords).toBe(0);
+    expect(result.stats.fabricatedRatio).toBe(0);
+  });
+
+  it('should mark individual words as valid if they exist somewhere in the Quran', () => {
+    // Each word exists in the Quran, but not as a contiguous sequence
+    // "الله" exists, "السماء" exists, "الأرض" exists (note: with hamza)
+    const result = validator.analyzeFabrication('الله السماء الأرض');
+
+    expect(result.words.length).toBe(3);
+    // All should be valid since each word exists somewhere in the Quran
+    expect(result.words.every(w => !w.isFabricated)).toBe(true);
+    expect(result.stats.fabricatedWords).toBe(0);
+  });
+
+  it('should mark fabricated words that do not exist anywhere in the Quran', () => {
+    // "بسم الله" exists, but "المجيد" doesn't exist as a standalone word in the Quran
+    // Note: "المجيد" does NOT appear in the Quran - it's "الْمَجِيدِ" in verses like 85:15
+    // but let's use a clearly fabricated word instead
+    const result = validator.analyzeFabrication('بسم الله الفلان');
+
+    expect(result.words.length).toBe(3);
+    // "بسم" and "الله" should be valid
+    expect(result.words[0].isFabricated).toBe(false);
+    expect(result.words[1].isFabricated).toBe(false);
+    // "الفلان" is completely made up - should be fabricated
+    expect(result.words[2].isFabricated).toBe(true);
+    expect(result.stats.fabricatedWords).toBe(1);
+  });
+
+  it('should handle empty input', () => {
+    const result = validator.analyzeFabrication('');
+
+    expect(result.words.length).toBe(0);
+    expect(result.stats.totalWords).toBe(0);
+    expect(result.stats.fabricatedWords).toBe(0);
+    expect(result.stats.fabricatedRatio).toBe(0);
+  });
+
+  it('should handle completely fabricated text', () => {
+    // Completely made up Arabic that doesn't exist in the Quran
+    const result = validator.analyzeFabrication('الفلان البلان الكلان');
+
+    expect(result.words.length).toBe(3);
+    expect(result.words.every(w => w.isFabricated)).toBe(true);
+    expect(result.stats.fabricatedWords).toBe(3);
+    expect(result.stats.fabricatedRatio).toBe(1);
+  });
+
+  it('should normalize input before analyzing', () => {
+    // With diacritics - should still find matches
+    const result = validator.analyzeFabrication('بِسْمِ اللَّهِ');
+
+    expect(result.words.length).toBe(2);
+    expect(result.words.every(w => !w.isFabricated)).toBe(true);
+  });
+
+  it('should include normalized input in result', () => {
+    const result = validator.analyzeFabrication('بِسْمِ اللَّهِ');
+
+    expect(result.normalizedInput).toBe('بسم الله');
+  });
+
+  it('should find contiguous matches spanning multiple words', () => {
+    // "قل هو الله احد" is a contiguous sequence from 112:1
+    const result = validator.analyzeFabrication('قل هو الله احد');
+
+    expect(result.words.length).toBe(4);
+    expect(result.words.every(w => !w.isFabricated)).toBe(true);
+  });
+});
+
+describe('Multi-Riwaya Support', () => {
+  describe('backward compatibility', () => {
+    it('should behave identically to current when no riwayat option is passed', () => {
+      const defaultValidator = new QuranValidator();
+      const explicitHafs = new QuranValidator({ riwayat: ['hafs'] });
+
+      // Both should validate Hafs text the same way
+      const defaultResult = defaultValidator.validate('قُلْ هُوَ ٱللَّهُ أَحَدٌ');
+      const explicitResult = explicitHafs.validate('قُلْ هُوَ ٱللَّهُ أَحَدٌ');
+
+      expect(defaultResult.isValid).toBe(explicitResult.isValid);
+      expect(defaultResult.matchType).toBe(explicitResult.matchType);
+      expect(defaultResult.reference).toBe(explicitResult.reference);
+    });
+
+    it('should not have riwayaMatches when only hafs is loaded', () => {
+      const validator = new QuranValidator();
+      const result = validator.validate('قُلْ هُوَ ٱللَّهُ أَحَدٌ');
+
+      expect(result.isValid).toBe(true);
+      expect(result.riwayaMatches).toBeUndefined();
+    });
+  });
+
+  describe('validate() with multiple riwayat', () => {
+    const multiValidator = new QuranValidator({ riwayat: ['hafs', 'warsh'] });
+
+    it('should validate Warsh text when Warsh is loaded', () => {
+      // Warsh 113:1 — different from Hafs 113:1
+      const warshText = 'قُلَ اَعُوذُ بِرَبِّ اِ۬لْفَلَقِ';
+      const result = multiValidator.validate(warshText);
+
+      expect(result.isValid).toBe(true);
+    });
+
+    it('should not validate Warsh text when only Hafs is loaded', () => {
+      const hafsOnly = new QuranValidator({ riwayat: ['hafs'] });
+      // Warsh 1:3 — "ملك يوم الدين" (different from Hafs "مالك يوم الدين")
+      const warshText = 'مَلِكِ يَوْمِ اِ۬لدِّينِۖ';
+      const result = hafsOnly.validate(warshText);
+
+      expect(result.isValid).toBe(false);
+    });
+
+    it('should return riwayaMatches when text matches in multiple riwayat', () => {
+      // 112:1 — Warsh and Hafs both have "قل هو الله أحد" (normalizes the same)
+      const verse = multiValidator.getVerse(1, 1); // Hafs 1:1 (basmalah)
+      const result = multiValidator.validate(verse!.text);
+
+      expect(result.isValid).toBe(true);
+      expect(result.riwayaMatches).toBeDefined();
+      expect(result.riwayaMatches!.length).toBeGreaterThan(0);
+      // Should include hafs
+      expect(result.riwayaMatches!.some(m => m.riwaya === 'hafs')).toBe(true);
+    });
+
+    it('should sort riwayaMatches with exact matches before normalized', () => {
+      // Use exact Hafs text — Hafs should be exact, Warsh (if same normalized) should be normalized
+      const hafsVerse = multiValidator.getVerse(1, 1);
+      const result = multiValidator.validate(hafsVerse!.text);
+
+      expect(result.isValid).toBe(true);
+      if (result.riwayaMatches && result.riwayaMatches.length > 1) {
+        // First match should be exact
+        expect(result.riwayaMatches[0].matchType).toBe('exact');
+      }
+    });
+  });
+
+  describe('validateAgainst() with multiple riwayat', () => {
+    const multiValidator = new QuranValidator({ riwayat: ['hafs', 'warsh'] });
+
+    it('should report which riwaya matched when validating against a reference', () => {
+      const hafsVerse = multiValidator.getVerse(1, 1);
+      const result = multiValidator.validateAgainst(hafsVerse!.text, '1:1');
+
+      expect(result.isValid).toBe(true);
+      expect(result.riwayaMatches).toBeDefined();
+      expect(result.riwayaMatches!.some(m => m.riwaya === 'hafs')).toBe(true);
+    });
+  });
+
+  describe('getLoadedRiwayat()', () => {
+    it('should return metadata for loaded riwayat', () => {
+      const validator = new QuranValidator({ riwayat: ['hafs', 'warsh'] });
+      const loaded = validator.getLoadedRiwayat();
+
+      expect(loaded.length).toBe(2);
+      expect(loaded[0].id).toBe('hafs');
+      expect(loaded[0].name).toBe('Hafs');
+      expect(loaded[0].nameArabic).toBe('حفص');
+      expect(loaded[1].id).toBe('warsh');
+      expect(loaded[1].name).toBe('Warsh');
+    });
+
+    it('should return only hafs by default', () => {
+      const validator = new QuranValidator();
+      const loaded = validator.getLoadedRiwayat();
+
+      expect(loaded.length).toBe(1);
+      expect(loaded[0].id).toBe('hafs');
+    });
+  });
+
+  describe('getVerseRiwayat()', () => {
+    it('should return texts for a verse across all loaded riwayat', () => {
+      const validator = new QuranValidator({ riwayat: ['hafs', 'warsh'] });
+      const texts = validator.getVerseRiwayat(1, 1);
+
+      expect(texts.length).toBe(2);
+      expect(texts.some(t => t.riwayaId === 'hafs')).toBe(true);
+      expect(texts.some(t => t.riwayaId === 'warsh')).toBe(true);
+      // Hafs 1:1 is basmalah, Warsh 1:1 is al-hamdu lillahi
+      const hafsText = texts.find(t => t.riwayaId === 'hafs')!;
+      expect(hafsText.text).toContain('بِسْمِ');
+    });
+
+    it('should return empty array for non-existent verse', () => {
+      const validator = new QuranValidator({ riwayat: ['hafs', 'warsh'] });
+      const texts = validator.getVerseRiwayat(999, 1);
+
+      expect(texts).toEqual([]);
+    });
+  });
+
+  describe('loading all riwayat', () => {
+    it('should load all 8 riwayat without errors', () => {
+      const all = new QuranValidator({
+        riwayat: ['hafs', 'warsh', 'qalun', 'shuba', 'duri', 'susi', 'bazzi', 'qunbul'],
+      });
+      const loaded = all.getLoadedRiwayat();
+      expect(loaded.length).toBe(8);
+    });
+  });
+});

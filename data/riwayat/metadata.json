@@ -1,0 +1,58 @@
+[
+  {
+    "id": "hafs",
+    "name": "Hafs",
+    "nameArabic": "حفص",
+    "qari": "Asim",
+    "qariArabic": "عاصم"
+  },
+  {
+    "id": "warsh",
+    "name": "Warsh",
+    "nameArabic": "ورش",
+    "qari": "Nafi'",
+    "qariArabic": "نافع"
+  },
+  {
+    "id": "qalun",
+    "name": "Qalun",
+    "nameArabic": "قالون",
+    "qari": "Nafi'",
+    "qariArabic": "نافع"
+  },
+  {
+    "id": "shuba",
+    "name": "Shu'ba",
+    "nameArabic": "شعبة",
+    "qari": "Asim",
+    "qariArabic": "عاصم"
+  },
+  {
+    "id": "duri",
+    "name": "Ad-Duri",
+    "nameArabic": "الدوري",
+    "qari": "Abu Amr",
+    "qariArabic": "أبو عمرو"
+  },
+  {
+    "id": "susi",
+    "name": "As-Susi",
+    "nameArabic": "السوسي",
+    "qari": "Abu Amr",
+    "qariArabic": "أبو عمرو"
+  },
+  {
+    "id": "bazzi",
+    "name": "Al-Bazzi",
+    "nameArabic": "البزي",
+    "qari": "Ibn Kathir",
+    "qariArabic": "ابن كثير"
+  },
+  {
+    "id": "qunbul",
+    "name": "Qunbul",
+    "nameArabic": "قنبل",
+    "qari": "Ibn Kathir",
+    "qariArabic": "ابن كثير"
+  }
+]

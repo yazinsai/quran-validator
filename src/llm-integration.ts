@@ -9,6 +9,7 @@
 
 import { QuranValidator } from './validator';
 import { normalizeArabic } from './normalizer';
+import type { FabricationAnalysis, RiwayaId } from './types';
 
 /**
  * Result of processing LLM output for Quran validation
@@ -47,6 +48,8 @@ export interface QuoteAnalysis {
   normalizedInput?: string;
   /** Expected normalized text when validation fails */
   expectedNormalized?: string;
+  /** Word-level fabrication analysis (only for invalid quotes) */
+  fabricationAnalysis?: FabricationAnalysis;
 }
 
 /**
@@ -59,6 +62,8 @@ export interface LLMProcessorOptions {
   scanUntagged?: boolean;
   /** Tag format to look for (default: 'xml') */
   tagFormat?: 'xml' | 'markdown' | 'bracket';
+  /** Which riwayat to load for validation (default: ['hafs']) */
+  riwayat?: RiwayaId[];
 }
 
 /**
@@ -198,11 +203,14 @@ export class LLMProcessor {
   private options: Required<LLMProcessorOptions>;
 
   constructor(options: LLMProcessorOptions = {}) {
-    this.validator = new QuranValidator();
+    this.validator = new QuranValidator(
+      options.riwayat ? { riwayat: options.riwayat } : undefined
+    );
     this.options = {
       autoCorrect: options.autoCorrect ?? true,
       scanUntagged: options.scanUntagged ?? true,
       tagFormat: options.tagFormat ?? 'xml',
+      riwayat: options.riwayat ?? ['hafs'],
     };
   }
 
@@ -565,6 +573,7 @@ export class LLMProcessor {
             wasCorrected: false,
             normalizedInput,
             expectedNormalized: normalizedExpected,
+            fabricationAnalysis: this.validator.analyzeFabrication(text),
           };
         }
 
@@ -594,6 +603,7 @@ export class LLMProcessor {
           endIndex,
           wasCorrected: false,
           normalizedInput,
+          fabricationAnalysis: this.validator.analyzeFabrication(text),
         };
       }
     }
@@ -614,7 +624,7 @@ export class LLMProcessor {
       wasCorrected = true;
     }
 
-    return {
+    const result: QuoteAnalysis = {
       original: text,
       corrected,
       isValid,
@@ -625,6 +635,13 @@ export class LLMProcessor {
       wasCorrected,
       normalizedInput,
     };
+
+    // Add fabrication analysis for invalid quotes
+    if (!isValid) {
+      result.fabricationAnalysis = this.validator.analyzeFabrication(text);
+    }
+
+    return result;
   }
 
   /**
@@ -655,6 +672,7 @@ export class LLMProcessor {
         endIndex,
         wasCorrected: false,
         normalizedInput,
+        fabricationAnalysis: this.validator.analyzeFabrication(text),
       };
     }
 
@@ -702,6 +720,7 @@ export class LLMProcessor {
       wasCorrected: false,
       normalizedInput,
       expectedNormalized: normalizedRange,
+      fabricationAnalysis: this.validator.analyzeFabrication(text),
     };
   }
 

@@ -65,6 +65,11 @@ export type {
   DetectionResult,
   ValidatorOptions,
   MatchType,
+  FabricationAnalysis,
+  WordAnalysis,
+  RiwayaId,
+  RiwayaInfo,
+  RiwayaMatch,
 } from './types';
 
 export type {

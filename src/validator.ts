@@ -5,6 +5,11 @@ import type {
   DetectionResult,
   ValidatorOptions,
   MatchType,
+  FabricationAnalysis,
+  WordAnalysis,
+  RiwayaId,
+  RiwayaInfo,
+  RiwayaMatch,
 } from './types';
 import {
   normalizeArabic,
@@ -12,9 +17,47 @@ import {
   extractArabicSegments,
 } from './normalizer';
 
+/**
+ * Aggressive normalization for fabrication checking using stripHamza option.
+ * This handles LLM output vs Uthmani differences by stripping hamza carriers
+ * and normalizing alef maqsura.
+ */
+function normalizeFabrication(text: string): string {
+  return normalizeArabic(text, { stripHamza: true });
+}
+
 // Import bundled data
 import versesData from '../data/quran-verses.min.json';
 import surahsData from '../data/quran-surahs.min.json';
+
+// Import all riwayat data (static imports for bundler compatibility)
+import hafsRiwayaData from '../data/riwayat/hafs.min.json';
+import warshRiwayaData from '../data/riwayat/warsh.min.json';
+import qalunRiwayaData from '../data/riwayat/qalun.min.json';
+import shubaRiwayaData from '../data/riwayat/shuba.min.json';
+import duriRiwayaData from '../data/riwayat/duri.min.json';
+import susiRiwayaData from '../data/riwayat/susi.min.json';
+import bazziRiwayaData from '../data/riwayat/bazzi.min.json';
+import qunbulRiwayaData from '../data/riwayat/qunbul.min.json';
+import riwayatMetadata from '../data/riwayat/metadata.json';
+
+interface MinimalVerse {
+  id: number;
+  surah: number;
+  ayah: number;
+  text: string;
+}
+
+const RIWAYA_DATA_MAP: Record<RiwayaId, MinimalVerse[]> = {
+  hafs: hafsRiwayaData as MinimalVerse[],
+  warsh: warshRiwayaData as MinimalVerse[],
+  qalun: qalunRiwayaData as MinimalVerse[],
+  shuba: shubaRiwayaData as MinimalVerse[],
+  duri: duriRiwayaData as MinimalVerse[],
+  susi: susiRiwayaData as MinimalVerse[],
+  bazzi: bazziRiwayaData as MinimalVerse[],
+  qunbul: qunbulRiwayaData as MinimalVerse[],
+};
 
 /**
  * Default validator options
@@ -22,7 +65,14 @@ import surahsData from '../data/quran-surahs.min.json';
 const DEFAULT_OPTIONS: Required<ValidatorOptions> = {
   maxSuggestions: 3,
   minDetectionLength: 10,
+  riwayat: ['hafs'],
 };
+
+interface RiwayaVerseEntry {
+  verse: QuranVerse;
+  riwayaId: RiwayaId;
+  originalText: string;
+}
 
 /**
  * QuranValidator - Validate and verify Quranic verses in text
@@ -54,27 +104,92 @@ export class QuranValidator {
   private normalizedVerseMap: Map<string, QuranVerse[]>;
   private verseById: Map<number, QuranVerse>;
 
+  // Multi-riwaya maps (only populated when multiple riwayat loaded)
+  private exactTextMap: Map<string, RiwayaVerseEntry[]>;
+  private normalizedRiwayaMap: Map<string, RiwayaVerseEntry[]>;
+  private riwayaVerses: Map<RiwayaId, MinimalVerse[]>;
+  private loadedRiwayat: RiwayaId[];
+  private multiRiwaya: boolean;
+
+  // Concatenated normalized corpus for fabrication detection
+  private normalizedCorpus: string;
+
   constructor(options: ValidatorOptions = {}) {
     this.options = { ...DEFAULT_OPTIONS, ...options };
+    this.loadedRiwayat = this.options.riwayat;
+    this.multiRiwaya = this.loadedRiwayat.length > 1;
 
-    // Load verses and surahs from bundled data
+    // Load verses and surahs from bundled data (Hafs base for backward compat)
     this.verses = versesData as QuranVerse[];
     this.surahs = surahsData as QuranSurah[];
 
     // Build lookup maps
     this.verseById = new Map();
     this.normalizedVerseMap = new Map();
+    this.exactTextMap = new Map();
+    this.normalizedRiwayaMap = new Map();
+    this.riwayaVerses = new Map();
 
+    const corpusTexts: string[] = [];
+
+    // Always build the Hafs base maps (for backward compat)
     for (const verse of this.verses) {
-      // ID lookup
       this.verseById.set(verse.id, verse);
 
-      // Normalized text lookup
-      const normalized = normalizeArabic(verse.text);
+      const normalized = normalizeFabrication(verse.text);
       const existing = this.normalizedVerseMap.get(normalized) || [];
       existing.push(verse);
       this.normalizedVerseMap.set(normalized, existing);
+
+      corpusTexts.push(normalized);
     }
+
+    // Load riwayat data
+    for (const riwayaId of this.loadedRiwayat) {
+      const data = RIWAYA_DATA_MAP[riwayaId];
+      this.riwayaVerses.set(riwayaId, data);
+
+      if (this.multiRiwaya) {
+        for (const rv of data) {
+          // Create a QuranVerse-compatible object for the entry
+          const verseRef: QuranVerse = {
+            id: rv.id,
+            surah: rv.surah,
+            ayah: rv.ayah,
+            text: rv.text,
+            textSimple: '',
+            page: 0,
+            juz: 0,
+          };
+
+          const entry: RiwayaVerseEntry = {
+            verse: verseRef,
+            riwayaId,
+            originalText: rv.text,
+          };
+
+          // Exact text map
+          const exactKey = rv.text;
+          const exactList = this.exactTextMap.get(exactKey) || [];
+          exactList.push(entry);
+          this.exactTextMap.set(exactKey, exactList);
+
+          // Normalized text map
+          const normalizedKey = normalizeFabrication(rv.text);
+          const normList = this.normalizedRiwayaMap.get(normalizedKey) || [];
+          normList.push(entry);
+          this.normalizedRiwayaMap.set(normalizedKey, normList);
+
+          // Add non-hafs texts to corpus for fabrication detection
+          if (riwayaId !== 'hafs') {
+            corpusTexts.push(normalizedKey);
+          }
+        }
+      }
+    }
+
+    // Build concatenated corpus for fabrication detection
+    this.normalizedCorpus = corpusTexts.join(' ');
   }
 
   /**
@@ -95,27 +210,33 @@ export class QuranValidator {
   validate(text: string): ValidationResult {
     const trimmedText = text.trim();
     const normalizedInput = normalizeArabic(trimmedText);
+    // Use aggressive normalization for lookup (handles ى/ي and hamza variations)
+    const lookupKey = normalizeFabrication(trimmedText);
 
     // Early exit if not Arabic
     if (!containsArabic(trimmedText)) {
       return this.noMatch(normalizedInput);
     }
 
+    // Multi-riwaya path
+    if (this.multiRiwaya) {
+      return this.validateMultiRiwaya(trimmedText, normalizedInput, lookupKey);
+    }
+
+    // Single-riwaya (Hafs only) path — original behavior
     // Step 1: Try exact match (with diacritics)
     const exactMatch = this.findExactMatch(trimmedText);
     if (exactMatch) {
       return this.createResult(exactMatch, 'exact', normalizedInput);
     }
 
-    // Step 2: Try normalized match (without diacritics)
-    const normalizedMatches = this.normalizedVerseMap.get(normalizedInput);
+    // Step 2: Try normalized match (handles script variations)
+    const normalizedMatches = this.normalizedVerseMap.get(lookupKey);
 
     if (normalizedMatches && normalizedMatches.length > 0) {
-      // Return first match with suggestions if multiple
       const primary = normalizedMatches[0];
       const result = this.createResult(primary, 'normalized', normalizedInput);
 
-      // Add suggestions if multiple matches
       if (normalizedMatches.length > 1) {
         result.suggestions = normalizedMatches
           .slice(0, this.options.maxSuggestions)
@@ -188,7 +309,7 @@ export class QuranValidator {
 
     // Check for exact match
     if (trimmedText === expectedText) {
-      return {
+      const result: ValidationResult = {
         isValid: true,
         matchType: 'exact',
         matchedVerse,
@@ -196,11 +317,17 @@ export class QuranValidator {
         normalizedInput,
         expectedNormalized,
       };
+      if (this.multiRiwaya) {
+        result.riwayaMatches = this.findRiwayaMatchesForRef(trimmedText, surah, startAyah);
+      }
+      return result;
     }
 
-    // Check for normalized match
-    if (normalizedInput === expectedNormalized) {
-      return {
+    // Check for normalized match (use aggressive normalization for ى/ي and hamza variations)
+    const inputLookup = normalizeFabrication(trimmedText);
+    const expectedLookup = normalizeFabrication(expectedText);
+    if (inputLookup === expectedLookup) {
+      const result: ValidationResult = {
         isValid: true,
         matchType: 'normalized',
         matchedVerse,
@@ -208,10 +335,31 @@ export class QuranValidator {
         normalizedInput,
         expectedNormalized,
       };
+      if (this.multiRiwaya) {
+        result.riwayaMatches = this.findRiwayaMatchesForRef(trimmedText, surah, startAyah);
+      }
+      return result;
+    }
+
+    // Multi-riwaya: check other riwayat for this reference
+    if (this.multiRiwaya && startAyah === endAyah) {
+      const riwayaMatches = this.findRiwayaMatchesForRef(trimmedText, surah, startAyah);
+      if (riwayaMatches.length > 0) {
+        const bestMatch = riwayaMatches[0];
+        return {
+          isValid: true,
+          matchType: bestMatch.matchType,
+          matchedVerse: bestMatch.verse,
+          reference,
+          normalizedInput,
+          expectedNormalized,
+          riwayaMatches,
+        };
+      }
     }
 
     // No match - find where the mismatch starts
-    const mismatchIndex = this.findMismatchIndex(normalizedInput, expectedNormalized);
+    const mismatchIndex = this.findMismatchIndex(inputLookup, expectedLookup);
 
     return {
       isValid: false,
@@ -376,7 +524,262 @@ export class QuranValidator {
       .slice(0, limit);
   }
 
+  /**
+   * Analyze text for fabricated words that don't exist in the Quran
+   *
+   * Uses greedy longest contiguous match algorithm:
+   * - Words that exist as part of any contiguous sequence in the Quran are valid
+   * - Words that cannot be found anywhere in the Quran corpus are marked as fabricated
+   *
+   * @param text - The Arabic text to analyze
+   * @returns Analysis with word-by-word breakdown
+   *
+   * @example
+   * ```ts
+   * const analysis = validator.analyzeFabrication('بسم الله الفلان');
+   * // 'بسم' and 'الله' are valid (exist in Quran)
+   * // 'الفلان' is fabricated (doesn't exist anywhere)
+   * console.log(analysis.stats.fabricatedWords); // 1
+   * ```
+   */
+  analyzeFabrication(text: string): FabricationAnalysis {
+    const normalizedInput = normalizeArabic(text);
+    // Use aggressive normalization for matching against corpus
+    const fabricationNormalized = normalizeFabrication(text);
+    const words = normalizedInput.split(/\s+/).filter(Boolean);
+    const fabricationWords = fabricationNormalized.split(/\s+/).filter(Boolean);
+    const results: WordAnalysis[] = [];
+
+    if (words.length === 0) {
+      return {
+        normalizedInput,
+        words: [],
+        stats: {
+          totalWords: 0,
+          fabricatedWords: 0,
+          fabricatedRatio: 0,
+        },
+      };
+    }
+
+    let i = 0;
+    while (i < fabricationWords.length) {
+      // Binary search for longest contiguous match starting at position i
+      let lo = 1;
+      let hi = fabricationWords.length - i;
+      let best = 0;
+
+      while (lo <= hi) {
+        const mid = Math.floor((lo + hi) / 2);
+        // Use aggressively normalized words for matching
+        const candidate = fabricationWords.slice(i, i + mid).join(' ');
+
+        if (this.normalizedCorpus.includes(candidate)) {
+          best = mid;
+          lo = mid + 1; // Try longer
+        } else {
+          hi = mid - 1; // Try shorter
+        }
+      }
+
+      if (best > 0) {
+        // Found contiguous match — mark words [i, i+best) as valid
+        // Use original normalized words for display
+        for (let j = i; j < i + best; j++) {
+          results.push({ word: words[j], isFabricated: false });
+        }
+        i += best;
+      } else {
+        // No match at all — word doesn't exist even alone
+        results.push({ word: words[i], isFabricated: true });
+        i++;
+      }
+    }
+
+    const fabricatedWords = results.filter((w) => w.isFabricated).length;
+
+    return {
+      normalizedInput,
+      words: results,
+      stats: {
+        totalWords: results.length,
+        fabricatedWords,
+        fabricatedRatio: results.length > 0 ? fabricatedWords / results.length : 0,
+      },
+    };
+  }
+
+  /**
+   * Get metadata for all loaded riwayat
+   *
+   * @returns Array of RiwayaInfo for each loaded riwaya
+   */
+  getLoadedRiwayat(): RiwayaInfo[] {
+    return this.loadedRiwayat.map(id => {
+      const meta = (riwayatMetadata as RiwayaInfo[]).find(m => m.id === id);
+      return meta || { id, name: id, nameArabic: '', qari: '', qariArabic: '' };
+    });
+  }
+
+  /**
+   * Get verse texts across all loaded riwayat for a given reference
+   *
+   * @param surah - Surah number (1-114)
+   * @param ayah - Ayah number
+   * @returns Array of {riwayaId, text} for each loaded riwaya that has this verse
+   */
+  getVerseRiwayat(surah: number, ayah: number): { riwayaId: RiwayaId; text: string }[] {
+    const results: { riwayaId: RiwayaId; text: string }[] = [];
+
+    for (const riwayaId of this.loadedRiwayat) {
+      const data = this.riwayaVerses.get(riwayaId);
+      if (!data) continue;
+
+      const verse = data.find(v => v.surah === surah && v.ayah === ayah);
+      if (verse) {
+        results.push({ riwayaId, text: verse.text });
+      }
+    }
+
+    return results;
+  }
+
   // Private helper methods
+
+  private validateMultiRiwaya(
+    trimmedText: string,
+    normalizedInput: string,
+    lookupKey: string
+  ): ValidationResult {
+    const riwayaMatches: RiwayaMatch[] = [];
+
+    // Step 1: Check exact matches across all riwayat
+    const exactEntries = this.exactTextMap.get(trimmedText);
+    if (exactEntries) {
+      for (const entry of exactEntries) {
+        riwayaMatches.push({
+          riwaya: entry.riwayaId,
+          matchType: 'exact',
+          verse: entry.verse,
+          riwayaText: entry.originalText,
+        });
+      }
+    }
+
+    // Step 2: Check normalized matches across all riwayat
+    const normalizedEntries = this.normalizedRiwayaMap.get(lookupKey);
+    if (normalizedEntries) {
+      for (const entry of normalizedEntries) {
+        // Skip if already found as exact match for this (surah, ayah, riwaya)
+        const isDuplicate = riwayaMatches.some(
+          m => m.riwaya === entry.riwayaId &&
+               m.verse.surah === entry.verse.surah &&
+               m.verse.ayah === entry.verse.ayah
+        );
+        if (!isDuplicate) {
+          riwayaMatches.push({
+            riwaya: entry.riwayaId,
+            matchType: 'normalized',
+            verse: entry.verse,
+            riwayaText: entry.originalText,
+          });
+        }
+      }
+    }
+
+    if (riwayaMatches.length === 0) {
+      return this.noMatch(normalizedInput);
+    }
+
+    // Sort: exact matches first, then normalized
+    riwayaMatches.sort((a, b) => {
+      if (a.matchType === 'exact' && b.matchType !== 'exact') return -1;
+      if (a.matchType !== 'exact' && b.matchType === 'exact') return 1;
+      return 0;
+    });
+
+    // Use the best match for backward-compatible fields
+    const best = riwayaMatches[0];
+    const result: ValidationResult = {
+      isValid: true,
+      matchType: best.matchType,
+      matchedVerse: best.verse,
+      reference: `${best.verse.surah}:${best.verse.ayah}`,
+      normalizedInput,
+      riwayaMatches,
+    };
+
+    // Add suggestions if multiple matches from different verses
+    const uniqueVerses = new Map<string, QuranVerse>();
+    for (const m of riwayaMatches) {
+      const key = `${m.verse.surah}:${m.verse.ayah}`;
+      if (!uniqueVerses.has(key)) {
+        uniqueVerses.set(key, m.verse);
+      }
+    }
+    if (uniqueVerses.size > 1) {
+      result.suggestions = Array.from(uniqueVerses.entries())
+        .slice(0, this.options.maxSuggestions)
+        .map(([ref, verse]) => ({ verse, reference: ref }));
+    }
+
+    return result;
+  }
+
+  /**
+   * Find riwaya matches for a specific reference (surah:ayah)
+   */
+  private findRiwayaMatchesForRef(
+    text: string,
+    surah: number,
+    ayah: number
+  ): RiwayaMatch[] {
+    const matches: RiwayaMatch[] = [];
+    const lookupKey = normalizeFabrication(text);
+
+    for (const riwayaId of this.loadedRiwayat) {
+      const data = this.riwayaVerses.get(riwayaId);
+      if (!data) continue;
+
+      const verse = data.find(v => v.surah === surah && v.ayah === ayah);
+      if (!verse) continue;
+
+      const verseRef: QuranVerse = {
+        id: verse.id,
+        surah: verse.surah,
+        ayah: verse.ayah,
+        text: verse.text,
+        textSimple: '',
+        page: 0,
+        juz: 0,
+      };
+
+      if (text === verse.text) {
+        matches.push({
+          riwaya: riwayaId,
+          matchType: 'exact',
+          verse: verseRef,
+          riwayaText: verse.text,
+        });
+      } else if (lookupKey === normalizeFabrication(verse.text)) {
+        matches.push({
+          riwaya: riwayaId,
+          matchType: 'normalized',
+          verse: verseRef,
+          riwayaText: verse.text,
+        });
+      }
+    }
+
+    // Sort: exact first
+    matches.sort((a, b) => {
+      if (a.matchType === 'exact' && b.matchType !== 'exact') return -1;
+      if (a.matchType !== 'exact' && b.matchType === 'exact') return 1;
+      return 0;
+    });
+
+    return matches;
+  }
 
   private findExactMatch(text: string): QuranVerse | undefined {
     return this.verses.find((v) => v.text === text);

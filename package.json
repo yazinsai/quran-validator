@@ -24,7 +24,8 @@
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run test && npm run build",
-    "fetch-quran": "tsx scripts/fetch-quran-data.ts"
+    "fetch-quran": "tsx scripts/fetch-quran-data.ts",
+    "fetch-kfgqpc": "tsx scripts/fetch-kfgqpc-data.ts"
   },
   "keywords": [
     "quran",
@@ -52,8 +53,5 @@
   },
   "engines": {
     "node": ">=18"
-  },
-  "dependencies": {
-    "arabic-text-normalizer": "^1.1.1"
   }
 }
