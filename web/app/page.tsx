@@ -122,7 +122,7 @@ function QuoteDetail({ quote }: { quote: CachedResult['quotes'][0] }) {
           </span>
         ) : (
           <div className="text-right">
-            {quote.fabricationAnalysis && quote.fabricationAnalysis.stats.fabricatedWords > 0 ? (
+            {quote.invalidReason !== 'fabricated' && quote.fabricationAnalysis && quote.fabricationAnalysis.stats.fabricatedWords > 0 ? (
               <>
                 <span className="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium rounded text-red-600 bg-red-50">
                   <Icon icon="solar:close-circle-bold" className="w-3.5 h-3.5" />
@@ -148,7 +148,11 @@ function QuoteDetail({ quote }: { quote: CachedResult['quotes'][0] }) {
       </div>
 
       {quote.original ? (
-        quote.fabricationAnalysis && quote.fabricationAnalysis.words.length > 0 ? (
+        quote.invalidReason === 'fabricated' ? (
+          <p className="font-arabic text-xl text-red-600 text-right leading-relaxed" dir="rtl">
+            {quote.original}
+          </p>
+        ) : quote.fabricationAnalysis && quote.fabricationAnalysis.words.length > 0 ? (
           <p className="font-arabic text-xl text-right leading-relaxed" dir="rtl">
             {(() => {
               // Split original text by whitespace to get words with diacritics

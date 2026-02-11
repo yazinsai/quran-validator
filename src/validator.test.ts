@@ -439,6 +439,23 @@ describe('analyzeFabrication()', () => {
     expect(result.words.length).toBe(4);
     expect(result.words.every(w => !w.isFabricated)).toBe(true);
   });
+
+  it('should not flag والمساكين with alef+superscript-alef as fabricated (9:60)', () => {
+    // LLM writes اٰ (alef + superscript alef U+0670) but Uthmani has ـٰ (tatweel + superscript alef)
+    // After normalization, the LLM version gets double alef (اا) vs single alef (ا)
+    const result = validator.analyzeFabrication('وَالْمَسَاٰكِينِ');
+
+    expect(result.words.length).toBe(1);
+    expect(result.words[0].isFabricated).toBe(false);
+  });
+
+  it('should not flag words with alef+superscript-alef pattern as fabricated', () => {
+    // Full verse fragment from 9:60 as an LLM might produce it
+    const result = validator.analyzeFabrication('إِنَّمَا الصَّدَقَاتُ لِلْفُقَرَاءِ وَالْمَسَاٰكِينِ');
+
+    const fabricated = result.words.filter(w => w.isFabricated);
+    expect(fabricated.length).toBe(0);
+  });
 });
 
 describe('Multi-Riwaya Support', () => {
