@@ -9,9 +9,9 @@
   },
   "dependencies": {
     "@iconify/react": "^6.0.2",
-    "arabic-text-normalizer": "file:../../../../../explore/arabic-text-normalizer",
+    "arabic-text-normalizer": "github:yazinsai/arabic-text-normalizer",
     "next": "^14.1.0",
-    "quran-validator": "file:..",
+    "quran-validator": "github:yazinsai/quran-validator",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
