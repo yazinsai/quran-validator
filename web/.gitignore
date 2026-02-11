@@ -10,8 +10,7 @@ out/
 .env.local
 .env.production
 
-# Cache
-cache.json
+# Cache (cache.json kept in git for deployment)
 
 # IDE
 .idea/
