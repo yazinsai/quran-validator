@@ -51,7 +51,7 @@ for (const [modelId, entry] of Object.entries(results) as any[]) {
 }
 
 // Sort by frequency (most common first)
-const sorted = [...allFabWords.entries()].sort((a, b) => b[1].length - a[1].length);
+const sorted = Array.from(allFabWords.entries()).sort((a, b) => b[1].length - a[1].length);
 
 console.log(`=== ALL FABRICATED WORDS (${sorted.length} unique) ===\n`);
 

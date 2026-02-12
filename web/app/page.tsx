@@ -324,7 +324,7 @@ function ResultCard({ result, rank, isHighlighted, onHighlightClear }: {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <span className="text-base">{result.icon}</span>
-              <h3 className="font-medium text-charcoal truncate text-sm sm:text-base">
+              <h3 className="font-medium text-charcoal text-sm sm:text-base">
                 {result.modelName}
               </h3>
               {isHighlighted && (
