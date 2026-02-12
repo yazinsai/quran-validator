@@ -85,3 +85,23 @@ input:-webkit-autofill:focus {
   transform: translateY(-2px);
   box-shadow: 0 8px 24px -8px rgba(45, 52, 54, 0.12);
 }
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in {
+    animation: none;
+    opacity: 1;
+  }
+
+  .card-hover {
+    transition: none;
+  }
+
+  .card-hover:hover {
+    transform: none;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+}

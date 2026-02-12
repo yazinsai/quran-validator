@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useTransition, useRef } from 'react';
+import { useState, useEffect, useTransition, useRef, useMemo } from 'react';
 import { Icon } from '@iconify/react';
 import { getLeaderboard, getModels, benchmarkModel, type OpenRouterModel } from './actions';
 import type { CachedResult, InvalidReason, PromptResult } from '@/lib/cache';
@@ -149,11 +149,11 @@ function QuoteDetail({ quote }: { quote: CachedResult['quotes'][0] }) {
 
       {quote.original ? (
         quote.invalidReason === 'fabricated' ? (
-          <p className="font-arabic text-xl text-red-600 text-right leading-relaxed" dir="rtl">
+          <p className="font-arabic text-xl text-red-600 text-right leading-relaxed" dir="rtl" lang="ar">
             {quote.original}
           </p>
         ) : quote.fabricationAnalysis && quote.fabricationAnalysis.words.length > 0 ? (
-          <p className="font-arabic text-xl text-right leading-relaxed" dir="rtl">
+          <p className="font-arabic text-xl text-right leading-relaxed" dir="rtl" lang="ar">
             {(() => {
               // Split original text by whitespace to get words with diacritics
               const originalWords = quote.original.split(/\s+/);
@@ -170,7 +170,7 @@ function QuoteDetail({ quote }: { quote: CachedResult['quotes'][0] }) {
             })()}
           </p>
         ) : (
-          <p className="font-arabic text-xl text-charcoal text-right" dir="rtl">
+          <p className="font-arabic text-xl text-charcoal text-right" dir="rtl" lang="ar">
             {quote.original}
           </p>
         )
@@ -185,7 +185,7 @@ function QuoteDetail({ quote }: { quote: CachedResult['quotes'][0] }) {
           <p className="text-xs text-charcoal-muted mb-2 uppercase tracking-wide">
             Actual verse
           </p>
-          <p className="font-arabic text-xl text-sage text-right" dir="rtl">
+          <p className="font-arabic text-xl text-sage text-right" dir="rtl" lang="ar">
             {quote.corrected}
           </p>
         </div>
@@ -307,14 +307,24 @@ function ResultCard({ result, rank, isHighlighted, onHighlightClear }: {
       className={`bg-white rounded-2xl shadow-soft overflow-hidden card-hover animate-fade-in transition-all ${
         isHighlighted ? 'ring-2 ring-sage ring-offset-2' : ''
       }`}
-      style={{ animationDelay: `${rank * 40}ms` }}
+      style={{ animationDelay: `${Math.min(rank * 40, 400)}ms` }}
     >
       <div
+        role="button"
+        tabIndex={0}
         className="p-4 sm:p-5 cursor-pointer"
         onClick={() => {
           setShowDetails(!showDetails);
           if (isHighlighted && onHighlightClear) onHighlightClear();
         }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setShowDetails(!showDetails);
+            if (isHighlighted && onHighlightClear) onHighlightClear();
+          }
+        }}
+        aria-expanded={showDetails}
       >
         <div className="flex items-center gap-3 sm:gap-4">
           <span className={`inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full text-xs sm:text-sm font-semibold flex-shrink-0 ${display.accent}`}>
@@ -323,7 +333,6 @@ function ResultCard({ result, rank, isHighlighted, onHighlightClear }: {
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-base">{result.icon}</span>
               <h3 className="font-medium text-charcoal text-sm sm:text-base">
                 {result.modelName}
               </h3>
@@ -385,17 +394,64 @@ function ResultCard({ result, rank, isHighlighted, onHighlightClear }: {
 }
 
 function MethodologyModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const modalRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      previousFocusRef.current = document.activeElement as HTMLElement;
+      requestAnimationFrame(() => {
+        const closeBtn = modalRef.current?.querySelector<HTMLElement>('button');
+        closeBtn?.focus();
+      });
+    } else if (previousFocusRef.current) {
+      previousFocusRef.current.focus();
+      previousFocusRef.current = null;
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+        return;
+      }
+      if (e.key === 'Tab' && modalRef.current) {
+        const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-charcoal/50 backdrop-blur-sm" onClick={onClose}>
       <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="methodology-title"
         className="bg-white rounded-2xl shadow-soft-xl max-w-2xl w-full max-h-[85vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="sticky top-0 bg-white border-b border-sand px-6 py-4 flex items-center justify-between">
-          <h2 className="font-display text-xl font-semibold text-charcoal">How We Test</h2>
-          <button onClick={onClose} className="p-2 hover:bg-sand rounded-lg transition-colors">
+          <h2 id="methodology-title" className="font-display text-xl font-semibold text-charcoal">How We Test</h2>
+          <button onClick={onClose} className="p-2 hover:bg-sand rounded-lg transition-colors" aria-label="Close">
             <Icon icon="solar:close-circle-linear" className="w-5 h-5 text-charcoal-muted" />
           </button>
         </div>
@@ -559,6 +615,7 @@ function LeaderboardSection({
               <button
                 onClick={() => setSearch('')}
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-charcoal-muted hover:text-charcoal"
+                aria-label="Clear search"
               >
                 <Icon icon="solar:close-circle-linear" className="w-3.5 h-3.5" />
               </button>
@@ -640,6 +697,7 @@ function AddModelSection({
   const [search, setSearch] = useState('');
   const [selectedModel, setSelectedModel] = useState<OpenRouterModel | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -663,6 +721,45 @@ function AddModelSection({
   const freeUntested = untestedModels.filter((m) => m.isFree);
   const paidUntested = untestedModels.filter((m) => !m.isFree);
 
+  const flatDisplayedModels = useMemo(() =>
+    [...testedModels, ...freeUntested, ...paidUntested],
+    [testedModels, freeUntested, paidUntested]
+  );
+
+  const handleDropdownKeyDown = (e: React.KeyboardEvent) => {
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setHighlightedIndex(prev =>
+          prev < flatDisplayedModels.length - 1 ? prev + 1 : 0
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setHighlightedIndex(prev =>
+          prev > 0 ? prev - 1 : flatDisplayedModels.length - 1
+        );
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (highlightedIndex >= 0 && highlightedIndex < flatDisplayedModels.length) {
+          handleSelectModel(flatDisplayedModels[highlightedIndex]);
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        setIsOpen(false);
+        setHighlightedIndex(-1);
+        break;
+    }
+  };
+
+  useEffect(() => {
+    if (highlightedIndex >= 0) {
+      document.getElementById(`model-option-${highlightedIndex}`)?.scrollIntoView({ block: 'nearest' });
+    }
+  }, [highlightedIndex]);
+
   const handleSubmit = () => {
     if (selectedModel) {
       if (selectedModel.alreadyTested) {
@@ -682,6 +779,7 @@ function AddModelSection({
     setSelectedModel(model);
     setIsOpen(false);
     setSearch('');
+    setHighlightedIndex(-1);
   };
 
   return (
@@ -699,10 +797,22 @@ function AddModelSection({
       <div className="flex gap-2" ref={dropdownRef}>
         <div className="relative flex-1">
           <div
+            role="combobox"
+            aria-expanded={isOpen}
+            aria-haspopup="listbox"
+            aria-controls={isOpen ? 'model-listbox' : undefined}
+            tabIndex={disabled ? -1 : 0}
             className={`flex items-center gap-2 px-3 py-2.5 bg-cream-dark border rounded-lg cursor-pointer transition-all text-sm ${
               isOpen ? 'border-sage ring-1 ring-sage/20' : 'border-sand hover:border-charcoal-muted'
             } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
             onClick={() => !disabled && setIsOpen(true)}
+            onKeyDown={(e) => {
+              if (disabled) return;
+              if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
+                e.preventDefault();
+                setIsOpen(true);
+              }
+            }}
           >
             {selectedModel ? (
               <>
@@ -735,15 +845,19 @@ function AddModelSection({
                   <input
                     type="text"
                     value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                    onChange={(e) => { setSearch(e.target.value); setHighlightedIndex(-1); }}
+                    onKeyDown={handleDropdownKeyDown}
                     placeholder="Search models..."
                     className="w-full pl-9 pr-3 py-2 bg-cream-dark border border-sand rounded-lg text-charcoal text-sm placeholder:text-charcoal-muted focus:outline-none focus:border-sage focus:ring-1 focus:ring-sage/20"
                     autoFocus
+                    aria-label="Search models"
+                    aria-controls="model-listbox"
+                    aria-activedescendant={highlightedIndex >= 0 ? `model-option-${highlightedIndex}` : undefined}
                   />
                 </div>
               </div>
 
-              <div className="max-h-64 overflow-y-auto">
+              <div id="model-listbox" role="listbox" className="max-h-64 overflow-y-auto">
                 {/* Already tested section */}
                 {testedModels.length > 0 && (
                   <div>
@@ -751,10 +865,13 @@ function AddModelSection({
                       <Icon icon="solar:check-circle-linear" className="w-3.5 h-3.5" />
                       Already Tested ({testedModels.length})
                     </div>
-                    {testedModels.map((model) => (
+                    {testedModels.map((model, i) => (
                       <div
                         key={model.id}
-                        className="px-3 py-2 hover:bg-cream cursor-pointer transition-colors flex items-center justify-between"
+                        id={`model-option-${i}`}
+                        role="option"
+                        aria-selected={highlightedIndex === i}
+                        className={`px-3 py-2 cursor-pointer transition-colors flex items-center justify-between ${highlightedIndex === i ? 'bg-cream' : 'hover:bg-cream'}`}
                         onClick={() => handleSelectModel(model)}
                       >
                         <span className="text-charcoal text-sm truncate">{model.name}</span>
@@ -772,15 +889,21 @@ function AddModelSection({
                     <div className="px-3 py-1.5 text-xs font-semibold text-sage uppercase tracking-wide bg-white/80 backdrop-blur-sm sticky top-0 border-b border-sage/20">
                       Free ({freeUntested.length})
                     </div>
-                    {freeUntested.map((model) => (
-                      <div
-                        key={model.id}
-                        className="px-3 py-2 hover:bg-cream cursor-pointer transition-colors"
-                        onClick={() => handleSelectModel(model)}
-                      >
-                        <span className="text-charcoal text-sm">{model.name}</span>
-                      </div>
-                    ))}
+                    {freeUntested.map((model, i) => {
+                      const flatIdx = testedModels.length + i;
+                      return (
+                        <div
+                          key={model.id}
+                          id={`model-option-${flatIdx}`}
+                          role="option"
+                          aria-selected={highlightedIndex === flatIdx}
+                          className={`px-3 py-2 cursor-pointer transition-colors ${highlightedIndex === flatIdx ? 'bg-cream' : 'hover:bg-cream'}`}
+                          onClick={() => handleSelectModel(model)}
+                        >
+                          <span className="text-charcoal text-sm">{model.name}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
 
@@ -790,18 +913,24 @@ function AddModelSection({
                     <div className="px-3 py-1.5 text-xs font-semibold text-charcoal-muted uppercase tracking-wide bg-white/80 backdrop-blur-sm sticky top-0 border-b border-sand/50">
                       Paid ({paidUntested.length})
                     </div>
-                    {paidUntested.map((model) => (
-                      <div
-                        key={model.id}
-                        className="px-3 py-2 hover:bg-cream cursor-pointer flex items-center justify-between transition-colors"
-                        onClick={() => handleSelectModel(model)}
-                      >
-                        <span className="text-charcoal text-sm truncate">{model.name}</span>
-                        <span className="text-xs text-charcoal-muted flex-shrink-0 ml-2">
-                          ${(parseFloat(model.pricing.prompt) * 1000000).toFixed(2)}/M
-                        </span>
-                      </div>
-                    ))}
+                    {paidUntested.map((model, i) => {
+                      const flatIdx = testedModels.length + freeUntested.length + i;
+                      return (
+                        <div
+                          key={model.id}
+                          id={`model-option-${flatIdx}`}
+                          role="option"
+                          aria-selected={highlightedIndex === flatIdx}
+                          className={`px-3 py-2 cursor-pointer flex items-center justify-between transition-colors ${highlightedIndex === flatIdx ? 'bg-cream' : 'hover:bg-cream'}`}
+                          onClick={() => handleSelectModel(model)}
+                        >
+                          <span className="text-charcoal text-sm truncate">{model.name}</span>
+                          <span className="text-xs text-charcoal-muted flex-shrink-0 ml-2">
+                            ${(parseFloat(model.pricing.prompt) * 1000000).toFixed(2)}/M
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
 
@@ -851,11 +980,17 @@ export default function Home() {
   const [highlightedModelId, setHighlightedModelId] = useState<string | null>(null);
 
   useEffect(() => {
-    Promise.all([getLeaderboard(), getModels()]).then(([results, modelList]) => {
-      setLeaderboard(results);
-      setModels(modelList);
-      setLoading(false);
-    });
+    Promise.all([getLeaderboard(), getModels()])
+      .then(([results, modelList]) => {
+        setLeaderboard(results);
+        setModels(modelList);
+      })
+      .catch(() => {
+        setError('Failed to load data. Please refresh the page.');
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
   const handleBenchmark = (model: OpenRouterModel) => {
@@ -885,7 +1020,7 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen pb-16">
+    <main id="main-content" className="min-h-screen pb-16">
       {/* Decorative elements */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div
