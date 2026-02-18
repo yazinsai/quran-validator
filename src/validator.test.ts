@@ -458,6 +458,125 @@ describe('analyzeFabrication()', () => {
   });
 });
 
+describe('Uthmani orthographic variants (ص/س equivalence)', () => {
+  const validator = new QuranValidator();
+
+  describe('validate() — ص/س interchangeability', () => {
+    it('should validate 2:247 when بصطة is used instead of stored بسطة', () => {
+      // Stored text has بَسْطَةً (with سين), user writes بَصْطَةً (with صاد)
+      // Both are legitimate Uthmani orthographic variants
+      const verse = validator.getVerse(2, 247)!;
+      const withSad = verse.text.replace('بَسْطَةً', 'بَصْطَةً');
+
+      const result = validator.validate(withSad);
+      expect(result.isValid).toBe(true);
+      expect(result.reference).toBe('2:247');
+    });
+
+    it('should validate 7:69 when بسطة is used instead of stored بصطة', () => {
+      // Stored text has بَصْۜطَةً (with صاد), user writes بَسْطَةً (with سين)
+      const verse = validator.getVerse(7, 69)!;
+      // Replace ص with س (ignoring the ۜ Quranic mark between them)
+      const withSin = verse.text.replace('بَصْۜطَةً', 'بَسْطَةً');
+
+      const result = validator.validate(withSin);
+      expect(result.isValid).toBe(true);
+      expect(result.reference).toBe('7:69');
+    });
+
+    it('should validate 2:245 when يبسط is used instead of stored يبصط', () => {
+      // Stored text has وَيَبْصُۜطُ (with صاد), user writes وَيَبْسُطُ (with سين)
+      const verse = validator.getVerse(2, 245)!;
+      const withSin = verse.text.replace('وَيَبْصُۜطُ', 'وَيَبْسُطُ');
+
+      const result = validator.validate(withSin);
+      expect(result.isValid).toBe(true);
+      expect(result.reference).toBe('2:245');
+    });
+
+    it('should validate 52:37 when المسيطرون is used instead of stored المصيطرون', () => {
+      // Stored text has ٱلْمُصَۣيْطِرُونَ (with صاد), user writes المسيطرون (with سين)
+      const verse = validator.getVerse(52, 37)!;
+      const withSin = verse.text.replace('ٱلْمُصَۣيْطِرُونَ', 'ٱلْمُسَيْطِرُونَ');
+
+      const result = validator.validate(withSin);
+      expect(result.isValid).toBe(true);
+      expect(result.reference).toBe('52:37');
+    });
+
+    it('should validate 88:22 when بمسيطر is used instead of stored بمصيطر', () => {
+      // Stored text has بِمُصَيْطِرٍ (with صاد), user writes بِمُسَيْطِرٍ (with سين)
+      const verse = validator.getVerse(88, 22)!;
+      const withSin = verse.text.replace('بِمُصَيْطِرٍ', 'بِمُسَيْطِرٍ');
+
+      const result = validator.validate(withSin);
+      expect(result.isValid).toBe(true);
+      expect(result.reference).toBe('88:22');
+    });
+  });
+
+  describe('analyzeFabrication() — ص/س interchangeability', () => {
+    it('should not flag بصطة as fabricated (variant of بسطة in 2:247)', () => {
+      const result = validator.analyzeFabrication('بَصْطَةً');
+      expect(result.words[0].isFabricated).toBe(false);
+    });
+
+    it('should not flag يبسط as fabricated (variant of يبصط in 2:245)', () => {
+      const result = validator.analyzeFabrication('يَبْسُطُ');
+      expect(result.words[0].isFabricated).toBe(false);
+    });
+  });
+});
+
+describe('Uthmani spacing and spelling variants', () => {
+  const validator = new QuranValidator();
+
+  describe('يا آدم spacing variants (2:33)', () => {
+    it('should validate when يا آدم is written with space instead of Uthmani يـٰٓـَٔادم', () => {
+      // Uthmani has يَـٰٓـَٔادَمُ (tatweel+superscript alef+hamza+alef+dal+meem)
+      // Common Arabic writes this as يا آدَمُ (with space)
+      const verse = validator.getVerse(2, 33)!;
+      // Replace the complex Uthmani يـٰٓـَٔادَمُ with common يَا آدَمُ
+      const common = verse.text.replace('يَـٰٓـَٔادَمُ', 'يَا آدَمُ');
+
+      const result = validator.validate(common);
+      expect(result.isValid).toBe(true);
+      expect(result.reference).toBe('2:33');
+    });
+
+    it('should validate when يا ءادم is written with space and hamza (2:33)', () => {
+      const verse = validator.getVerse(2, 33)!;
+      const common = verse.text.replace('يَـٰٓـَٔادَمُ', 'يَا ءَادَمُ');
+
+      const result = validator.validate(common);
+      expect(result.isValid).toBe(true);
+      expect(result.reference).toBe('2:33');
+    });
+  });
+
+  describe('يـأيها vs يا أيها variants (2:21)', () => {
+    it('should validate when يا أيها is written with space instead of Uthmani يـٰٓأيها', () => {
+      // Uthmani has يَـٰٓأَيُّهَا (connected), common spelling يا أَيُّهَا (with space)
+      const verse = validator.getVerse(2, 21)!;
+      const common = verse.text.replace('يَـٰٓأَيُّهَا', 'يَا أَيُّهَا');
+
+      const result = validator.validate(common);
+      expect(result.isValid).toBe(true);
+      expect(result.reference).toBe('2:21');
+    });
+
+    it('should validate when يـأيها is written without superscript alef', () => {
+      const verse = validator.getVerse(2, 21)!;
+      // Remove superscript alef but keep connected form
+      const variant = verse.text.replace('يَـٰٓأَيُّهَا', 'يَـأَيُّهَا');
+
+      const result = validator.validate(variant);
+      expect(result.isValid).toBe(true);
+      expect(result.reference).toBe('2:21');
+    });
+  });
+});
+
 describe('Multi-Riwaya Support', () => {
   describe('backward compatibility', () => {
     it('should behave identically to current when no riwayat option is passed', () => {

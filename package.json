@@ -44,7 +44,7 @@
     "url": "https://github.com/yazinsai/quran-validator"
   },
   "dependencies": {
-    "arabic-text-normalizer": "^1.3.0"
+    "arabic-text-normalizer": "^1.4.0"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
