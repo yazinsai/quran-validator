@@ -196,6 +196,15 @@ describe('QuranValidator', () => {
 
       expect(results.length).toBeLessThanOrEqual(5);
     });
+
+    it('should return empty array for empty query', () => {
+      // JS: 'anystring'.includes('') === true, so without a guard every verse matches
+      expect(validator.search('')).toEqual([]);
+    });
+
+    it('should return empty array for whitespace-only query', () => {
+      expect(validator.search('   ')).toEqual([]);
+    });
   });
 
   describe('createValidator()', () => {

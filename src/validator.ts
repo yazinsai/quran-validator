@@ -103,6 +103,8 @@ export class QuranValidator {
   // Pre-computed normalized data for faster lookups
   private normalizedVerseMap: Map<string, QuranVerse[]>;
   private verseById: Map<number, QuranVerse>;
+  private verseBySurahAyah: Map<string, QuranVerse>;
+  private exactVerseMap: Map<string, QuranVerse>;
 
   // Multi-riwaya maps (only populated when multiple riwayat loaded)
   private exactTextMap: Map<string, RiwayaVerseEntry[]>;
@@ -125,6 +127,8 @@ export class QuranValidator {
 
     // Build lookup maps
     this.verseById = new Map();
+    this.verseBySurahAyah = new Map();
+    this.exactVerseMap = new Map();
     this.normalizedVerseMap = new Map();
     this.exactTextMap = new Map();
     this.normalizedRiwayaMap = new Map();
@@ -135,6 +139,8 @@ export class QuranValidator {
     // Always build the Hafs base maps (for backward compat)
     for (const verse of this.verses) {
       this.verseById.set(verse.id, verse);
+      this.verseBySurahAyah.set(`${verse.surah}:${verse.ayah}`, verse);
+      this.exactVerseMap.set(verse.text, verse);
 
       const normalized = normalizeFabrication(verse.text);
       const existing = this.normalizedVerseMap.get(normalized) || [];
@@ -431,7 +437,7 @@ export class QuranValidator {
    * @returns The verse or undefined if not found
    */
   getVerse(surah: number, ayah: number): QuranVerse | undefined {
-    return this.verses.find((v) => v.surah === surah && v.ayah === ayah);
+    return this.verseBySurahAyah.get(`${surah}:${ayah}`);
   }
 
   /**
@@ -501,7 +507,8 @@ export class QuranValidator {
     query: string,
     limit: number = 10
   ): { verse: QuranVerse; similarity: number }[] {
-    const normalizedQuery = normalizeArabic(query);
+    const normalizedQuery = normalizeArabic(query.trim());
+    if (!normalizedQuery) return [];
     const results: { verse: QuranVerse; similarity: number }[] = [];
 
     for (const verse of this.verses) {
@@ -782,7 +789,7 @@ export class QuranValidator {
   }
 
   private findExactMatch(text: string): QuranVerse | undefined {
-    return this.verses.find((v) => v.text === text);
+    return this.exactVerseMap.get(text);
   }
 
   private createResult(
