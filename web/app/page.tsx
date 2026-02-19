@@ -4,6 +4,7 @@ import { useState, useEffect, useTransition, useRef, useMemo } from 'react';
 import { Icon } from '@iconify/react';
 import { getLeaderboard, getModels, benchmarkModel, type OpenRouterModel } from './actions';
 import type { CachedResult, InvalidReason, PromptResult } from '@/lib/cache';
+import { compareResults } from '@/lib/leaderboard';
 
 function getRankDisplay(rank: number) {
   if (rank === 1) return { accent: 'bg-sage text-white' };
@@ -1001,7 +1002,7 @@ export default function Home() {
       if (response.success) {
         setLeaderboard((prev) => {
           const filtered = prev.filter((r) => r.modelId !== response.result.modelId);
-          return [...filtered, response.result].sort((a, b) => b.accuracy - a.accuracy);
+          return [...filtered, response.result].sort(compareResults);
         });
         setModels((prev) =>
           prev.map((m) =>

@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { compareResults } from './leaderboard';
 
 const cwd = process.cwd();
 const repoWebCache = path.join(cwd, 'web', 'cache.json');
@@ -101,7 +102,7 @@ export function setCachedResult(result: CachedResult): void {
 
 export function getAllCachedResults(): CachedResult[] {
   const cache = readCache();
-  return Object.values(cache.results).sort((a, b) => b.accuracy - a.accuracy);
+  return Object.values(cache.results).sort(compareResults);
 }
 
 export function clearCache(): void {
