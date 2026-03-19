@@ -1,6 +1,6 @@
 {
   "name": "quran-validator",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "description": "Validate and verify Quranic verses in LLM-generated text with 100% accuracy",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -24,8 +24,7 @@
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run test && npm run build",
-    "fetch-quran": "tsx scripts/fetch-quran-data.ts",
-    "fetch-kfgqpc": "tsx scripts/fetch-kfgqpc-data.ts"
+    "fetch-quran": "tsx scripts/fetch-quran-data.ts"
   },
   "keywords": [
     "quran",

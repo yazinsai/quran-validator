@@ -62,8 +62,6 @@ interface ValidationResult {
         verse: QuranVerse;
         reference: string;
     }[];
-    /** All matching riwayat, best match first (only present when multiple riwayat loaded) */
-    riwayaMatches?: RiwayaMatch[];
 }
 /**
  * Detection result for finding Quran quotes in text
@@ -84,29 +82,6 @@ interface DetectionResult {
     }[];
 }
 /**
- * Supported riwaya identifiers
- */
-type RiwayaId = 'hafs' | 'warsh' | 'qalun' | 'shuba' | 'duri' | 'susi' | 'bazzi' | 'qunbul';
-/**
- * Metadata about a riwaya (transmission of Quran recitation)
- */
-interface RiwayaInfo {
-    id: RiwayaId;
-    name: string;
-    nameArabic: string;
-    qari: string;
-    qariArabic: string;
-}
-/**
- * A match from a specific riwaya
- */
-interface RiwayaMatch {
-    riwaya: RiwayaId;
-    matchType: MatchType;
-    verse: QuranVerse;
-    riwayaText: string;
-}
-/**
  * Options for the validator
  */
 interface ValidatorOptions {
@@ -114,8 +89,6 @@ interface ValidatorOptions {
     maxSuggestions?: number;
     /** Minimum text length to consider for detection (default: 10) */
     minDetectionLength?: number;
-    /** Which riwayat to load (default: ['hafs']) */
-    riwayat?: RiwayaId[];
 }
 /**
  * Analysis of word-level fabrication in text
@@ -170,11 +143,8 @@ declare class QuranValidator {
     private options;
     private normalizedVerseMap;
     private verseById;
-    private exactTextMap;
-    private normalizedRiwayaMap;
-    private riwayaVerses;
-    private loadedRiwayat;
-    private multiRiwaya;
+    private verseBySurahAyah;
+    private exactVerseMap;
     private normalizedCorpus;
     constructor(options?: ValidatorOptions);
     /**
@@ -304,28 +274,6 @@ declare class QuranValidator {
      * ```
      */
     analyzeFabrication(text: string): FabricationAnalysis;
-    /**
-     * Get metadata for all loaded riwayat
-     *
-     * @returns Array of RiwayaInfo for each loaded riwaya
-     */
-    getLoadedRiwayat(): RiwayaInfo[];
-    /**
-     * Get verse texts across all loaded riwayat for a given reference
-     *
-     * @param surah - Surah number (1-114)
-     * @param ayah - Ayah number
-     * @returns Array of {riwayaId, text} for each loaded riwaya that has this verse
-     */
-    getVerseRiwayat(surah: number, ayah: number): {
-        riwayaId: RiwayaId;
-        text: string;
-    }[];
-    private validateMultiRiwaya;
-    /**
-     * Find riwaya matches for a specific reference (surah:ayah)
-     */
-    private findRiwayaMatchesForRef;
     private findExactMatch;
     private createResult;
     private noMatch;
@@ -407,8 +355,6 @@ interface LLMProcessorOptions {
     scanUntagged?: boolean;
     /** Tag format to look for (default: 'xml') */
     tagFormat?: 'xml' | 'markdown' | 'bracket';
-    /** Which riwayat to load for validation (default: ['hafs']) */
-    riwayat?: RiwayaId[];
 }
 /**
  * System prompts for LLMs to properly format Quran quotes
@@ -575,4 +521,4 @@ declare function findDifferences(input: string, correct: string): {
     position: number;
 }[];
 
-export { type DetectionResult, type FabricationAnalysis, LLMProcessor, type LLMProcessorOptions, type MatchType, type ProcessedOutput, type QuoteAnalysis, type QuranSurah, QuranValidator, type QuranVerse, type RiwayaId, type RiwayaInfo, type RiwayaMatch, SYSTEM_PROMPTS, type ValidationResult, type ValidatorOptions, type WordAnalysis, calculateSimilarity, containsArabic, createLLMProcessor, createValidator, extractArabicSegments, findDifferences, normalizeArabic, quickValidate, removeDiacritics };
+export { type DetectionResult, type FabricationAnalysis, LLMProcessor, type LLMProcessorOptions, type MatchType, type ProcessedOutput, type QuoteAnalysis, type QuranSurah, QuranValidator, type QuranVerse, SYSTEM_PROMPTS, type ValidationResult, type ValidatorOptions, type WordAnalysis, calculateSimilarity, containsArabic, createLLMProcessor, createValidator, extractArabicSegments, findDifferences, normalizeArabic, quickValidate, removeDiacritics };

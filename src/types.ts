@@ -65,8 +65,6 @@ export interface ValidationResult {
     verse: QuranVerse;
     reference: string;
   }[];
-  /** All matching riwayat, best match first (only present when multiple riwayat loaded) */
-  riwayaMatches?: RiwayaMatch[];
 }
 
 /**
@@ -89,32 +87,6 @@ export interface DetectionResult {
 }
 
 /**
- * Supported riwaya identifiers
- */
-export type RiwayaId = 'hafs' | 'warsh' | 'qalun' | 'shuba' | 'duri' | 'susi' | 'bazzi' | 'qunbul';
-
-/**
- * Metadata about a riwaya (transmission of Quran recitation)
- */
-export interface RiwayaInfo {
-  id: RiwayaId;
-  name: string;
-  nameArabic: string;
-  qari: string;
-  qariArabic: string;
-}
-
-/**
- * A match from a specific riwaya
- */
-export interface RiwayaMatch {
-  riwaya: RiwayaId;
-  matchType: MatchType;
-  verse: QuranVerse;
-  riwayaText: string;
-}
-
-/**
  * Options for the validator
  */
 export interface ValidatorOptions {
@@ -122,8 +94,6 @@ export interface ValidatorOptions {
   maxSuggestions?: number;
   /** Minimum text length to consider for detection (default: 10) */
   minDetectionLength?: number;
-  /** Which riwayat to load (default: ['hafs']) */
-  riwayat?: RiwayaId[];
 }
 
 /**

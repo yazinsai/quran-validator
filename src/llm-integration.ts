@@ -9,7 +9,7 @@
 
 import { QuranValidator } from './validator';
 import { normalizeArabic } from './normalizer';
-import type { FabricationAnalysis, RiwayaId } from './types';
+import type { FabricationAnalysis } from './types';
 
 /**
  * Result of processing LLM output for Quran validation
@@ -62,8 +62,6 @@ export interface LLMProcessorOptions {
   scanUntagged?: boolean;
   /** Tag format to look for (default: 'xml') */
   tagFormat?: 'xml' | 'markdown' | 'bracket';
-  /** Which riwayat to load for validation (default: ['hafs']) */
-  riwayat?: RiwayaId[];
 }
 
 /**
@@ -203,14 +201,11 @@ export class LLMProcessor {
   private options: Required<LLMProcessorOptions>;
 
   constructor(options: LLMProcessorOptions = {}) {
-    this.validator = new QuranValidator(
-      options.riwayat ? { riwayat: options.riwayat } : undefined
-    );
+    this.validator = new QuranValidator();
     this.options = {
       autoCorrect: options.autoCorrect ?? true,
       scanUntagged: options.scanUntagged ?? true,
       tagFormat: options.tagFormat ?? 'xml',
-      riwayat: options.riwayat ?? ['hafs'],
     };
   }
 

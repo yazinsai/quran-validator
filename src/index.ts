@@ -67,9 +67,6 @@ export type {
   MatchType,
   FabricationAnalysis,
   WordAnalysis,
-  RiwayaId,
-  RiwayaInfo,
-  RiwayaMatch,
 } from './types';
 
 export type {
