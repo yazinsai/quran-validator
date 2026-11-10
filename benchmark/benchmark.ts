@@ -21,7 +21,7 @@ const CONFIG = {
     { id: 'anthropic/claude-sonnet-4.5', name: 'Claude Sonnet 4.5', icon: '🟤' },
     { id: 'google/gemini-3-flash-preview', name: 'Gemini 3 Flash', icon: '🔵' },
     { id: 'deepseek/deepseek-v3.2', name: 'DeepSeek V3.2', icon: '🟢' },
-    { id: 'x-ai/grok-code-fast-1', name: 'Grok Code Fast 1', icon: '⚫' },
+    { id: 'x-ai/grok-build-0.1', name: 'Grok Build 0.1', icon: '⚫' },
     { id: 'google/gemini-2.5-flash', name: 'Gemini 2.5 Flash', icon: '💎' },
     { id: 'openai/gpt-4o', name: 'GPT-4o', icon: '🟡' },
     { id: 'stepfun/step-3.5-flash:free', name: 'Step 3.5 Flash', icon: '🔶' },

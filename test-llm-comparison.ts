@@ -9,8 +9,8 @@ if (!OPENROUTER_API_KEY) {
 
 const models = [
   'openai/gpt-4o',
-  'anthropic/claude-3.5-sonnet',
-  'google/gemini-2.0-flash-001',
+  'anthropic/claude-sonnet-5.5',
+  'google/gemini-3.1-flash-lite',
   'meta-llama/llama-3.3-70b-instruct',
   'deepseek/deepseek-chat',
 ];
